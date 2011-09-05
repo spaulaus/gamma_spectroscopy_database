@@ -9,11 +9,10 @@ c++SrcSuf = cpp
 #Define Objects
 MAINO = database.o
 DATABASEINTERFACEO = DatabaseInterface.o
-#OUTPUTINTERFACEO = OutputInterface.o
+OUTPUTINTERFACEO = OutputInterface.o
 
 #List Objects
-OBJS = $(MAINO) $(DATABASEINTERFACEO) 
-#$(OUTPUTINTERFACEO)
+OBJS = $(MAINO) $(DATABASEINTERFACEO) $(OUTPUTINTERFACEO)
 
 PROGRAM = database
 

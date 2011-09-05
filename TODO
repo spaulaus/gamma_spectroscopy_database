@@ -1,0 +1,4 @@
+1. Add a "-n" flag to crate a new database
+2. Add the DatabaseEditor class.
+3. Get the coincident gamma list implemented.
+4. Fix the formatting of the output.  Maybe use some structures. 
