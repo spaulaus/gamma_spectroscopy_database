@@ -12,7 +12,7 @@
 class OutputInterface : public DatabaseInterface
 {
  public:
-   OutputInterface(const std::string &databaseName);
+   OutputInterface();
    ~OutputInterface();
 
    void OutputInformation(const std::vector<std::string> &gammas, 
@@ -21,10 +21,5 @@ class OutputInterface : public DatabaseInterface
 		    const std::string &verbosity);
    void VerbosityHandler(const std::vector<std::string> &gammas, 
 			 const std::string &verbosity);
-
- private:
-   sqlite3 *database_;
-   std::string databaseName_;
-   char *errorMessage_;
 };
 #endif //__OUTPUTINTERFACE_H_

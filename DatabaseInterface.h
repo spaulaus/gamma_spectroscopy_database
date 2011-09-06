@@ -12,14 +12,16 @@
 class DatabaseInterface
 {
  public:
-   DatabaseInterface(const std::string &databaseName);
+   DatabaseInterface();
    DatabaseInterface(const int &noArgs);
    ~DatabaseInterface();
 
-   void OpenDatabase(void);
+   void CreateDatabase(const std::string &name);
+   void OpenDatabase(const std::string &dbName);
    void OutputHelpInfo(void);
    
  protected:
-   sqlite3 *database;
+   static sqlite3 *database;
+   static std::string databaseName;
 }; //class DatabaseInterface
 #endif //__DATABASEINTERFACE_H_

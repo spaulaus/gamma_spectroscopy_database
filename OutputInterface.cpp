@@ -29,21 +29,17 @@ void OutputInterface::OutputInformation(const vector<string> &gammas,
    }else if(gammas.size() == 1) {
       command.append("* from ");
       command.append(table);
-      command.append(" where ");
-      command.append("gamma=");
+      command.append(" where gamma=");
       command.append(gammas.at(0));
    }else if(gammas.size() == 2 && table == "range") {
-      command.append("gamma from generalInfo");
-      command.append(" where ");
-      command.append("gamma>=");
+      command.append("gamma from generalInfo where gamma>=");
       command.append(gammas.at(0));
       command.append(" and gamma<=");
       command.append(gammas.at(1));      
    }else if(gammas.size() == 2 && table == "generalInfo") {
       command.append("* from ");
       command.append(table);
-      command.append(" where ");
-      command.append("gamma>=");
+      command.append(" where gamma>=");
       command.append(gammas.at(0));
       command.append(" and gamma<=");
       command.append(gammas.at(1));      
@@ -55,7 +51,7 @@ void OutputInterface::OutputInformation(const vector<string> &gammas,
    cout << command << endl;
 
    bool prepared = 
-      sqlite3_prepare_v2(database, command.c_str(), 
+      sqlite3_prepare_v2(DatabaseInterface::database, command.c_str(), 
 			 -1, &statement, 0) == SQLITE_OK;
 
    if(prepared) {
@@ -90,9 +86,9 @@ void OutputInterface::OutputInformation(const vector<string> &gammas,
       	 }else {
       	    break;   
       	 }
-      }
+      }//while(true)
       sqlite3_finalize(statement);
-   }
+   }//if(prepared)
 }
 
 
@@ -114,11 +110,8 @@ void OutputInterface::VerbosityHandler(const vector<string> &gammas,
 
 
 //********** OutputInterface **********
-OutputInterface::OutputInterface(const string &databaseName) : 
-   DatabaseInterface(databaseName)
+OutputInterface::OutputInterface()
 {
-   database_ = DatabaseInterface::database;
-   databaseName_ = databaseName;
 }
 
 
