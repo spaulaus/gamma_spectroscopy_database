@@ -51,14 +51,14 @@ void DatabaseInterface::CreateDatabase(const string &name)
       commandList.push_back("insert into modTimes values('coinInfo.dat', 0)");
       commandList.push_back("insert into modTimes values('fitInfo.dat',0)");
 
-      char *zErrMsg = 0;
+      char *errorMessage = 0;
       for(vector<string>::iterator it = commandList.begin(); 
 	  it != commandList.end(); it++){
-	 int rc = sqlite3_exec(database, (*it).c_str(), NULL, 0, &zErrMsg);
+	 int rc = sqlite3_exec(database, (*it).c_str(), NULL, 0, &errorMessage);
 	 if(rc != SQLITE_OK){
 	    cout << "Error creating the tables in the new database." << endl
-		 << "ERROR:" << zErrMsg << endl;
-	    sqlite3_free(zErrMsg);
+		 << "ERROR:" << errorMessage << endl;
+	    sqlite3_free(errorMessage);
 	    exit(1);
 	 }
       }

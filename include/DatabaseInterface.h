@@ -6,6 +6,7 @@
 #define __DATABASEINTERFACE_H_ 1
 
 #include <string>
+#include <vector>
 
 #include "sqlite3.h"
 

@@ -18,11 +18,17 @@ class DataReader : public DatabaseInterface
    DataReader();
    ~DataReader();
 
-   std::time_t GetModTime(const std::string &fileName);
-   
-   void CompareModTimes(void);
-   void UpdateModTimes(void);
  private:
+   std::time_t GetModTime(const std::string &fileName);
+   std::vector<std::string> GetComment(std::string &line, const int &lineNo,
+				       const std::string &fileName);
+   void CommandSizeCheck(const std::string &fileName, 
+			 const std::vector<std::string> &values, 
+			 const int &lineNo);
+   void CompareModTimes(void);
+   void ReadInformation(const std::string &fileName);
+   void UpdateModTimes(const std::string &fileName, const std::time_t &modTime);
+   
    std::map<std::string, std::time_t> modTimes_;
 }; //class DatabaseInterface
 #endif //__DATAREADER_H_
