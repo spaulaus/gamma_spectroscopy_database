@@ -5,8 +5,6 @@
 #ifndef __OUTPUTINTERFACE_H_
 #define __OUTPUTINTERFACE_H_ 1
 
-#include <vector>
-
 #include "DatabaseInterface.h"
 
 class OutputInterface : public DatabaseInterface

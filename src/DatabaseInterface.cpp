@@ -35,11 +35,11 @@ void DatabaseInterface::CreateDatabase(const string &name)
 			    "GammaHigh integer, BkgLowA integer, "
 			    "BkgHighA integer,BkgLowB integer, "
 			    "BkgHighB integer, Comments varchar)");
-      commandList.push_back("CREATE TABLE coincidences(gamma integer asc "
-			    "not null, coinGamma integer not null)");
+      commandList.push_back("CREATE TABLE coincidences(Gamma integer asc "
+			    "not null, CoinGamma integer not null)");
       commandList.push_back("CREATE TABLE generalInfo(Gamma integer "
 			    "primary key asc not null, Spectrum integer, "
-			    "Nuclide varchar, HalfLife real, Comments varchar)");
+			    "Nucleus varchar, HalfLife real, Comments varchar)");
       commandList.push_back("CREATE TABLE fitInfo(Gamma integer primary key "
 			    "asc not null, Spectrum integer, FitLow integer, "
 			    "FitHigh integer, Centroid real, Area integer, "
@@ -47,9 +47,9 @@ void DatabaseInterface::CreateDatabase(const string &name)
 			    "Comments varchar)");
       commandList.push_back("CREATE TABLE modTimes(FileName varchar primary key "
 			    "asc not null, ModTime date not null)");
-      commandList.push_back("insert into modTimes values('generalInfo.dat', 0)");
-      commandList.push_back("insert into modTimes values('coinInfo.dat', 0)");
-      commandList.push_back("insert into modTimes values('fitInfo.dat',0)");
+      commandList.push_back("insert into modTimes values('generalInfo', 0)");
+      commandList.push_back("insert into modTimes values('coinInfo', 0)");
+      commandList.push_back("insert into modTimes values('fitInfo',0)");
 
       char *errorMessage = 0;
       for(vector<string>::iterator it = commandList.begin(); 

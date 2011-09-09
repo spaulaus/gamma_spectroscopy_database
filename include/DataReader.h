@@ -6,10 +6,10 @@
 #define __DATAREADER_H_ 1
 
 #include <map>
-#include <string>
 
 #include <ctime>
 
+#include "DatabaseInterface.h"
 #include "sqlite3.h"
 
 class DataReader : public DatabaseInterface
@@ -19,16 +19,23 @@ class DataReader : public DatabaseInterface
    ~DataReader();
 
  private:
-   std::time_t GetModTime(const std::string &fileName);
-   std::vector<std::string> GetComment(std::string &line, const int &lineNo,
-				       const std::string &fileName);
-   void CommandSizeCheck(const std::string &fileName, 
-			 const std::vector<std::string> &values, 
-			 const int &lineNo);
-   void CompareModTimes(void);
-   void ReadInformation(const std::string &fileName);
-   void UpdateModTimes(const std::string &fileName, const std::time_t &modTime);
+   std::string BuildCommand(void);
+   std::time_t GetNewModTime(const std::string &fileName);
+   std::vector<std::string> GetComment(std::string &line);
    
-   std::map<std::string, std::time_t> modTimes_;
+   void CommandSizeCheck(void);
+   void CompareModTimes(void);
+   void FillDatabase(void);
+   void GetOldModTimes(void);
+   void ReadInformation(void);
+   void UpdateModTimes(const std::time_t &modTime);
+   
+   int lineNo_;
+   std::map<std::string, std::time_t> newTimes_;
+   std::map<std::string, std::time_t> oldTimes_;
+   std::string tableName_;
+   std::vector<std::string> values_;
+   std::vector<std::string> coinGammas_;
 }; //class DatabaseInterface
 #endif //__DATAREADER_H_
+

@@ -36,38 +36,38 @@ int main(int argc, char* argv[])
    DataReader dataHandling;
    
    //Open the outputting interface.
-   OutputInterface outputHandling;
+   // OutputInterface outputHandling;
    
-   if(argc == 3){
-      if (atoi(argv[2]) != 0) {
-	 gammas.push_back(argv[2]);
-   	 outputHandling.OutputInformation(gammas, "generalInfo");
-	 exit(1);
-      }else {
-	 openInterface.OutputHelpInfo();
-      }
-   }else if(argc == 4) {
-      if(atoi(argv[2]) != 0 &&  atoi(argv[3]) != 0) {
-	 gammas.push_back(argv[2]);
-	 gammas.push_back(argv[3]);
-	 outputHandling.OutputInformation(gammas, "range");
-	 exit(1);
-      }else if (atoi(argv[2]) == 0 &&  atoi(argv[3]) != 0) {
-	 gammas.push_back(argv[3]);
-	 outputHandling.VerbosityHandler(gammas, argv[2]);
-      }else {
-	 openInterface.OutputHelpInfo();
-      }	 
-   }else if(argc == 5) {
-      if(atoi(argv[2]) == 0 && atoi(argv[3]) != 0 
-	 && atoi(argv[4]) != 0) {
-	 gammas.push_back(argv[3]);
-	 gammas.push_back(argv[4]);
-	 outputHandling.VerbosityHandler(gammas, "generalInfo");
-      }else {
-	 openInterface.OutputHelpInfo();
-      }
-   } else {
-      openInterface.OutputHelpInfo();
-   }
+   // if(argc == 3){
+   //    if (atoi(argv[2]) != 0) {
+   // 	 gammas.push_back(argv[2]);
+   // 	 outputHandling.OutputInformation(gammas, "generalInfo");
+   // 	 exit(1);
+   //    }else {
+   // 	 openInterface.OutputHelpInfo();
+   //    }
+   // }else if(argc == 4) {
+   //    if(atoi(argv[2]) != 0 &&  atoi(argv[3]) != 0) {
+   // 	 gammas.push_back(argv[2]);
+   // 	 gammas.push_back(argv[3]);
+   // 	 outputHandling.OutputInformation(gammas, "range");
+   // 	 exit(1);
+   //    }else if (atoi(argv[2]) == 0 &&  atoi(argv[3]) != 0) {
+   // 	 gammas.push_back(argv[3]);
+   // 	 outputHandling.VerbosityHandler(gammas, argv[2]);
+   //    }else {
+   // 	 openInterface.OutputHelpInfo();
+   //    }	 
+   // }else if(argc == 5) {
+   //    if(atoi(argv[2]) == 0 && atoi(argv[3]) != 0 
+   // 	 && atoi(argv[4]) != 0) {
+   // 	 gammas.push_back(argv[3]);
+   // 	 gammas.push_back(argv[4]);
+   // 	 outputHandling.VerbosityHandler(gammas, "generalInfo");
+   //    }else {
+   // 	 openInterface.OutputHelpInfo();
+   //    }
+   // } else {
+   //    openInterface.OutputHelpInfo();
+   // }
 }

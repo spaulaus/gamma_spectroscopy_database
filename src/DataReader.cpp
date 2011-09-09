@@ -17,23 +17,40 @@
 
 using namespace std;
 
+//********** BuildCommand **********
+string DataReader::BuildCommand(void)
+{
+   stringstream command;
+   command << "insert or replace into " << tableName_ << " values(";
+   for(vector<string>::iterator it = values_.begin(); 
+       it != values_.end(); it++) { 
+      unsigned int position = it - values_.begin();
+      
+      if(position == values_.size()-1)
+	 command << "'" << *it << "')";
+      else
+	 command << "'" << *it << "',";
+   }
+   return(command.str());
+}//string DataReader::BuildCommand
+
+
 //********** CommandSizeCheck **********
-void DataReader::CommandSizeCheck(const string &fileName, const vector<string> &values,
-				  const int &lineNo)
+void DataReader::CommandSizeCheck(void)
 {
    bool wrongSize = false;
-   if(fileName == "generalInfo.dat" && values.size() != 5)
+   if(tableName_ == "generalInfo" && values_.size() != 5)
       wrongSize = true;
-   else if(fileName == "coinInfo.dat" && values.size() != 9)
+   else if(tableName_ == "coinInfo" && values_.size() != 9)
       wrongSize = true;
-   else if(fileName == "fitInfo.dat" && values.size() != 10)
+   else if(tableName_ == "fitInfo" && values_.size() != 10)
       wrongSize = true;
    else
       wrongSize = false;
       
    if(wrongSize){
-      cout << endl << "There is a missing value in " << fileName 
-	   << " on line" << lineNo << ".  Please correct this." << endl;
+      cout << endl << "There is a missing value in " << tableName_ 
+	   << " on line" << lineNo_ << ".  Please correct this." << endl;
       exit(1);
    }
 }
@@ -42,57 +59,54 @@ void DataReader::CommandSizeCheck(const string &fileName, const vector<string> &
 //********** CompareModTimes **********
 void DataReader::CompareModTimes(void)
 {
-   map<string, time_t> oldTimes;
-   sqlite3_stmt *statement; 
-   string command = "select * from modTimes";
-   bool prepared = 
-      sqlite3_prepare_v2(database, command.c_str(), 
- 			 -1, &statement, 0) == SQLITE_OK;
-   if(prepared) {
-      while (true) {
-	 int result = sqlite3_step(statement);
-	 if(result == SQLITE_ROW) {
-	    string fileName = (char*)sqlite3_column_text(statement,0);
-	    int modTime = atoi((char*)sqlite3_column_text(statement,1));
-	    oldTimes.insert(make_pair(fileName, modTime));
-	 }else {
-	    break;
-	 }
-      }//while(true)
-      sqlite3_finalize(statement);
-   }//if(prepared)
-   
-   for(map<string, time_t>::iterator itOld = oldTimes.begin(); itOld != oldTimes.end();
-       itOld++) {
-      map<string,time_t>::iterator itNew = modTimes_.find((*itOld).first);
+   for(map<string, time_t>::iterator itOld = oldTimes_.begin(); 
+       itOld != oldTimes_.end(); itOld++) {
+      map<string,time_t>::iterator itNew = newTimes_.find((*itOld).first);
+      tableName_ = (*itNew).first;
       
-      if((*itOld).second < (*itNew).second){
-	 //ReadInformation((*itOld).second);
-	 UpdateModTimes((*itNew).first, (*itNew).second);
+      if((*itOld).second <= (*itNew).second) { //remove the = after tests
+	 ReadInformation();
+	 UpdateModTimes((*itNew).second);
       }else {
-	 continue;
+      	 continue;
       }
    }	    
-}//void DataReader::CompreModTimes
+}//void DataReader::CompareModTimes
+
+
+//********** FillDatabase **********
+void DataReader::FillDatabase(void)
+{
+   string command = BuildCommand();
+   char *errorMessage = 0;
+   int rc = sqlite3_exec(database, command.c_str(), 
+   			 NULL, 0, &errorMessage);
+   if(rc != SQLITE_OK) {
+      cout << "Error updating the database with new info from the datafiles."
+   	   << endl << "ERROR:" << errorMessage << endl;
+      sqlite3_free(errorMessage);
+      exit(1);
+   }
+}
 
 
 //********** GetComment **********
-vector<string> DataReader::GetComment(string &line, const int &lineNo, const string &fileName)
+vector<string> DataReader::GetComment(string &line)
 {
    vector<string> temp;
-   size_t foundComStart = line.find("\"");
-   size_t foundComEnd   = line.find("\"", int(foundComStart)+1);
-   int commentSize = foundComEnd - foundComStart;
+   size_t foundStart = line.find("\"");
+   size_t foundEnd   = line.find("\"", int(foundStart)+1);
+   int size = foundEnd - foundStart;
    
-   if(foundComStart == string::npos || foundComEnd == string::npos) {
-      cout << endl << "Cannot find comment/coincidence quotes in \"" 
-	   << fileName << "\".  At line: " << lineNo << "." << endl
+   if(foundStart == string::npos || foundEnd == string::npos) {
+      cout << endl << "Missing quotes in \"" << tableName_ 
+	   << "\".  At line: " << lineNo_ << "." << endl
 	   << "This is a fatal error." << endl << endl;
       exit(1);
    }
        
-   string comment = line.substr(int(foundComStart) + 1, commentSize - 1);
-   line.erase(foundComStart, commentSize + 1);
+   string comment = line.substr(int(foundStart) + 1, size - 1);
+   line.erase(foundStart, size + 1);
    
    temp.push_back(line);
    temp.push_back(comment);
@@ -101,14 +115,16 @@ vector<string> DataReader::GetComment(string &line, const int &lineNo, const str
 }
 
 
-//********** GetModTime **********
-time_t DataReader::GetModTime(const string &fileName)
+//********** GetNewModTime **********
+time_t DataReader::GetNewModTime(const string &tableName_)
 {
    struct stat fileAttributes;
-   int statResult = stat(fileName.c_str(), &fileAttributes);
+   stringstream tempFileName;
+   tempFileName << "data/" << tableName_ << ".dat";
+   int statResult = stat(tempFileName.str().c_str(), &fileAttributes);
 
    if(statResult == -1) {
-      cout << endl << "Problem with the data file \"" << fileName 
+      cout << endl << "Problem with the data file \"" << tableName_ 
 	   << "\".  It does not seem to exist." << endl << endl;
       exit(1);
    }else {
@@ -117,14 +133,37 @@ time_t DataReader::GetModTime(const string &fileName)
 }
 
 
-//********** DataReader **********
-DataReader::DataReader()
+//********** GetOldModTimes **********
+void DataReader::GetOldModTimes(void)
 {
-   modTimes_.insert(make_pair("coinInfo.dat", GetModTime("coinInfo.dat")));
-   modTimes_.insert(make_pair("generalInfo.dat", 
-			      GetModTime("generalInfo.dat")));
-   modTimes_.insert(make_pair("fitInfo.dat", GetModTime("fitInfo.dat")));
+   sqlite3_stmt *statement; 
+   bool prepared = 
+      sqlite3_prepare_v2(database, "select * from modTimes", 
+ 			 -1, &statement, 0) == SQLITE_OK;
+   if(prepared) {
+      while (true) {
+	 int result = sqlite3_step(statement);
+	 if(result == SQLITE_ROW) {
+	    string fileName = (char*)sqlite3_column_text(statement,0);
+	    int modTime = atoi((char*)sqlite3_column_text(statement,1));
+	    oldTimes_.insert(make_pair(fileName, modTime));
+	 }else {
+	    break;
+	 }
+      }//while(true)
+      sqlite3_finalize(statement);
+   }//if(prepared)
+}
 
+
+//********** DataReader **********
+DataReader::DataReader(void)
+{
+   newTimes_.insert(make_pair("coinInfo", GetNewModTime("coinInfo")));
+   newTimes_.insert(make_pair("generalInfo", GetNewModTime("generalInfo")));
+   newTimes_.insert(make_pair("fitInfo", GetNewModTime("fitInfo")));
+
+   GetOldModTimes();
    CompareModTimes();
 }
 
@@ -136,68 +175,72 @@ DataReader::~DataReader()
 
 
 //********** ReadInformation **********
-void DataReader::ReadInformation(const string &fileName)
+void DataReader::ReadInformation(void)
 {
-   int lineNo = 0;
-   ifstream inputFile(fileName.c_str());
+   
+   lineNo_ = 0;
+   stringstream tempFileName;
+   tempFileName << "data/" << tableName_ << ".dat";
+   ifstream inputFile(tempFileName.str().c_str());
    if(inputFile.is_open()) {
       while(inputFile.good()) {
-	 lineNo++;
+	 values_.clear();
+	 lineNo_++;
+
 	 string line;
 	 string temp;
-	 vector<string> coinGammas;
-	 
+	 	 
 	 //Skip over the comment lines here. 
 	 getline(inputFile, line);
 	 if(line.find("#") != string::npos || line == "")
 	    continue;
 	 
-	 if(fileName == "coinInfo.dat") {
-	    //Get the Coincidence gammas
-	    vector<string> tempCoin = GetComment(line, lineNo, fileName);
+	 //Get the Coincidence gammas
+	 if(tableName_ == "coinInfo") {
+	    vector<string> tempCoin = GetComment(line);
 	    line = tempCoin.at(0);
 	    
-	    stringstream tempStream (stringstream::in | stringstream::out);
+	    stringstream tempStream;
 	    tempStream << tempCoin.at(1);
 	    while(tempStream >> temp)
-	       coinGammas.push_back(temp);
-	    sort(coinGammas.begin(), coinGammas.end());
+	       coinGammas_.push_back(temp);
+	    sort(coinGammas_.begin(), coinGammas_.end());
 	 }	 
 	 
-	 vector<string> tempComment = GetComment(line, lineNo, fileName);
+	 vector<string> tempComment = GetComment(line);
 	 line = tempComment.at(0);
 	 string comment = tempComment.at(1);
 
 	 vector<string> tempData;
-	 stringstream lineParse (stringstream::in | stringstream::out);
+	 stringstream lineParse;
 	 lineParse << line;
 	 while(lineParse >> temp)
 	    tempData.push_back(temp);
 	 tempData.push_back(comment);
-	 CommandSizeCheck(fileName, tempData, lineNo);
+	 values_ = tempData;
+	 
+	 //Do operations to update/fill the database with the
+	 //collected values.  
+	 CommandSizeCheck();
+	 FillDatabase();
       } // while(coinInfoFile.good())
    }else {
-      cout << "Couldn't open \"" << fileName << ".\"" << endl
+      cout << "Couldn't open \"" << tableName_ << ".dat.\"" << endl
 	   << "  This is fatal!" << endl << "Exiting" << endl;
       exit(1);
    } // if(inputFile.is_open())
-}
+}//void DataReader::ReadInformation
 
 
 //********** UpdateModTimes **********
-void DataReader::UpdateModTimes(const string &fileName, const time_t &modTime)
+void DataReader::UpdateModTimes(const time_t &modTime)
 {
-   stringstream ss;
-   ss << modTime;
-   string command = "update modTimes";
-   command.append(" set ModTime=");
-   command.append(ss.str());
-   command.append(" where FileName='");
-   command.append(fileName);
-   command.append("'");
+   stringstream command;
+   command << "update modTimes set ModTime=" << modTime
+	   << " where FileName='" << tableName_ << "'";
    
    char *errorMessage = 0;
-   int rc = sqlite3_exec(database, command.c_str(), NULL, 0, &errorMessage);
+   int rc = sqlite3_exec(database, command.str().c_str(), NULL, 0, &errorMessage);
    if(rc != SQLITE_OK) {
       cout << "Error updating the data file modification times." << endl
 	   << "ERROR:" << errorMessage << endl;
