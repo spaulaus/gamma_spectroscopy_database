@@ -12,13 +12,13 @@ LDLIBS += -lsqlite3 -ldl -lpthread
 c++SrcSuf = cpp
 
 #Define Objects
-MAINO = database.o
+DATABASEINPUTO = DatabaseInput.o
 DATABASEINTERFACEO = DatabaseInterface.o
-OUTPUTINTERFACEO = OutputInterface.o
-DATAREADERO = DataReader.o
+DATABASEOUTPUTO = DatabaseOutput.o
+MAINO = database.o
 
 #List Objects
-OBJS = $(MAINO) $(DATABASEINTERFACEO) $(OUTPUTINTERFACEO) $(DATAREADERO)
+OBJS = $(MAINO) $(DATABASEINTERFACEO) $(DATABASEOUTPUTO) $(DATABASEINPUTO)
 
 PROGRAM = database
 

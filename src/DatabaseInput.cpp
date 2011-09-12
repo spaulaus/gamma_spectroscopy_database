@@ -1,6 +1,7 @@
 /***********************************************************
- ** \file DataReader.cpp
- ** Class to handle the read/write of the datafiles. 
+ ** \file DatabaseInput.cpp
+ ** Class that handles the reading of datafiles and filling
+ **   of the database.
  ** Written: S.V. Paulauskas - 09 Sept 2011
  **********************************************************/
 #include <algorithm>
@@ -11,15 +12,16 @@
 #include <cstdlib>
 
 #include "DatabaseInterface.h"
-#include "DataReader.h"
+#include "DatabaseInput.h"
 #include "sqlite3.h"
 #include "sys/stat.h"
 
 using namespace std;
 
 //********** BuildCommand **********
-string DataReader::BuildCommand(void)
+vector<string> DatabaseInput::BuildCommand(void)
 {
+   vector<string> tempCommands;
    stringstream command;
    command << "insert or replace into " << tableName_ << " values(";
    for(vector<string>::iterator it = values_.begin(); 
@@ -31,12 +33,25 @@ string DataReader::BuildCommand(void)
       else
 	 command << "'" << *it << "',";
    }
-   return(command.str());
-}//string DataReader::BuildCommand
+
+   tempCommands.push_back(command.str());
+
+   if(coinGammas_.size() != 0 && tableName_ == "coinInfo") {
+      for(vector<string>::iterator it = coinGammas_.begin(); 
+	  it != coinGammas_.end(); it++) {
+	 stringstream coins; 
+	 coins << "insert or replace into coincidences values(" 
+	       << values_.at(0) << "," << *it << ")";
+	 tempCommands.push_back(coins.str());
+      }
+   }
+
+   return(tempCommands);
+}//string DatabaseInput::BuildCommand
 
 
 //********** CommandSizeCheck **********
-void DataReader::CommandSizeCheck(void)
+void DatabaseInput::CommandSizeCheck(void)
 {
    bool wrongSize = false;
    if(tableName_ == "generalInfo" && values_.size() != 5)
@@ -57,41 +72,59 @@ void DataReader::CommandSizeCheck(void)
 
 
 //********** CompareModTimes **********
-void DataReader::CompareModTimes(void)
+void DatabaseInput::CompareModTimes(void)
 {
    for(map<string, time_t>::iterator itOld = oldTimes_.begin(); 
        itOld != oldTimes_.end(); itOld++) {
       map<string,time_t>::iterator itNew = newTimes_.find((*itOld).first);
       tableName_ = (*itNew).first;
-      
-      if((*itOld).second <= (*itNew).second) { //remove the = after tests
+
+      if((*itOld).second < (*itNew).second) {
 	 ReadInformation();
 	 UpdateModTimes((*itNew).second);
       }else {
       	 continue;
       }
    }	    
-}//void DataReader::CompareModTimes
+}//void DatabaseInput::CompareModTimes
 
 
-//********** FillDatabase **********
-void DataReader::FillDatabase(void)
+//********** ExecuteBegin **********
+void DatabaseInput::ExecuteBeginAndEnd(const string &command)
 {
-   string command = BuildCommand();
    char *errorMessage = 0;
    int rc = sqlite3_exec(database, command.c_str(), 
-   			 NULL, 0, &errorMessage);
+   			 NULL, NULL, &errorMessage);
    if(rc != SQLITE_OK) {
       cout << "Error updating the database with new info from the datafiles."
    	   << endl << "ERROR:" << errorMessage << endl;
       sqlite3_free(errorMessage);
       exit(1);
+   } 
+}
+
+
+//********** FillDatabase **********
+void DatabaseInput::FillDatabase(void)
+{
+   vector<string> commands = BuildCommand();
+   for(vector<string>::iterator it = commands.begin();
+       it != commands.end(); it++) {
+      char *errorMessage = 0;
+      int rc = sqlite3_exec(database, (*it).c_str(), 
+      			    NULL, NULL, &errorMessage);
+      if(rc != SQLITE_OK) {
+      	 cout << "Error updating the database with new info from the datafiles."
+      	      << endl << "ERROR:" << errorMessage << endl;
+      	 sqlite3_free(errorMessage);
+      	 exit(1);
+      }
    }
 }
 
 
 //********** GetComment **********
-vector<string> DataReader::GetComment(string &line)
+vector<string> DatabaseInput::GetComment(string &line)
 {
    vector<string> temp;
    size_t foundStart = line.find("\"");
@@ -116,15 +149,15 @@ vector<string> DataReader::GetComment(string &line)
 
 
 //********** GetNewModTime **********
-time_t DataReader::GetNewModTime(const string &tableName_)
+time_t DatabaseInput::GetNewModTime(const string &tableName)
 {
    struct stat fileAttributes;
    stringstream tempFileName;
-   tempFileName << "data/" << tableName_ << ".dat";
+   tempFileName << "data/" << tableName << ".dat";
    int statResult = stat(tempFileName.str().c_str(), &fileAttributes);
 
    if(statResult == -1) {
-      cout << endl << "Problem with the data file \"" << tableName_ 
+      cout << endl << "Problem with the data file \"" << tableName
 	   << "\".  It does not seem to exist." << endl << endl;
       exit(1);
    }else {
@@ -134,7 +167,7 @@ time_t DataReader::GetNewModTime(const string &tableName_)
 
 
 //********** GetOldModTimes **********
-void DataReader::GetOldModTimes(void)
+void DatabaseInput::GetOldModTimes(void)
 {
    sqlite3_stmt *statement; 
    bool prepared = 
@@ -156,28 +189,29 @@ void DataReader::GetOldModTimes(void)
 }
 
 
-//********** DataReader **********
-DataReader::DataReader(void)
+//********** DatabaseInput **********
+DatabaseInput::DatabaseInput(void)
 {
    newTimes_.insert(make_pair("coinInfo", GetNewModTime("coinInfo")));
    newTimes_.insert(make_pair("generalInfo", GetNewModTime("generalInfo")));
    newTimes_.insert(make_pair("fitInfo", GetNewModTime("fitInfo")));
 
+   ExecuteBeginAndEnd("begin");
    GetOldModTimes();
    CompareModTimes();
+   ExecuteBeginAndEnd("commit");
 }
 
 
-//********** ~DataReader **********
-DataReader::~DataReader()
+//********** ~DatabaseInput **********
+DatabaseInput::~DatabaseInput()
 {
 }
 
 
 //********** ReadInformation **********
-void DataReader::ReadInformation(void)
+void DatabaseInput::ReadInformation(void)
 {
-   
    lineNo_ = 0;
    stringstream tempFileName;
    tempFileName << "data/" << tableName_ << ".dat";
@@ -223,17 +257,20 @@ void DataReader::ReadInformation(void)
 	 //collected values.  
 	 CommandSizeCheck();
 	 FillDatabase();
+
+	 values_.clear();
+	 coinGammas_.clear();
       } // while(coinInfoFile.good())
    }else {
       cout << "Couldn't open \"" << tableName_ << ".dat.\"" << endl
 	   << "  This is fatal!" << endl << "Exiting" << endl;
       exit(1);
    } // if(inputFile.is_open())
-}//void DataReader::ReadInformation
+}//void DatabaseInput::ReadInformation
 
 
 //********** UpdateModTimes **********
-void DataReader::UpdateModTimes(const time_t &modTime)
+void DatabaseInput::UpdateModTimes(const time_t &modTime)
 {
    stringstream command;
    command << "update modTimes set ModTime=" << modTime

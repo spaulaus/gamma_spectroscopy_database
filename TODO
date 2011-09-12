@@ -1,4 +1,4 @@
-1. Add a "-n" flag to crate a new database
-2. Add the DatabaseEditor class.
-3. Get the coincident gamma list implemented.
-4. Fix the formatting of the output.  Maybe use some structures. 
+1. Implement a way to delete records from the database.
+2. Clean up the outputting.
+3. Output the conicident gammas and the gammas that have it as a coincidence.
+

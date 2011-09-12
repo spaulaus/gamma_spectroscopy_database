@@ -1,6 +1,6 @@
 /***********************************************************
  ** \file database.cpp
- ** File to handle communicate with sqlite databases
+ ** File to handle communication with sqlite databases
  ** Written: S.V. Paulauskas - 30 Aug 2011
  **********************************************************/
 #include <iostream>
@@ -8,9 +8,9 @@
 
 #include <cstdlib>
 
+#include "DatabaseInput.h"
 #include "DatabaseInterface.h"
-#include "DataReader.h"
-#include "OutputInterface.h"
+#include "DatabaseOutput.h"
 #include "sqlite3.h"
 
 using std::cout;
@@ -33,41 +33,41 @@ int main(int argc, char* argv[])
    }
    
    //Check the existence and modification time of the data files.
-   DataReader dataHandling;
+   DatabaseInput fillDatabase;
    
    //Open the outputting interface.
-   // OutputInterface outputHandling;
-   
-   // if(argc == 3){
-   //    if (atoi(argv[2]) != 0) {
-   // 	 gammas.push_back(argv[2]);
-   // 	 outputHandling.OutputInformation(gammas, "generalInfo");
-   // 	 exit(1);
-   //    }else {
-   // 	 openInterface.OutputHelpInfo();
-   //    }
-   // }else if(argc == 4) {
-   //    if(atoi(argv[2]) != 0 &&  atoi(argv[3]) != 0) {
-   // 	 gammas.push_back(argv[2]);
-   // 	 gammas.push_back(argv[3]);
-   // 	 outputHandling.OutputInformation(gammas, "range");
-   // 	 exit(1);
-   //    }else if (atoi(argv[2]) == 0 &&  atoi(argv[3]) != 0) {
-   // 	 gammas.push_back(argv[3]);
-   // 	 outputHandling.VerbosityHandler(gammas, argv[2]);
-   //    }else {
-   // 	 openInterface.OutputHelpInfo();
-   //    }	 
-   // }else if(argc == 5) {
-   //    if(atoi(argv[2]) == 0 && atoi(argv[3]) != 0 
-   // 	 && atoi(argv[4]) != 0) {
-   // 	 gammas.push_back(argv[3]);
-   // 	 gammas.push_back(argv[4]);
-   // 	 outputHandling.VerbosityHandler(gammas, "generalInfo");
-   //    }else {
-   // 	 openInterface.OutputHelpInfo();
-   //    }
-   // } else {
-   //    openInterface.OutputHelpInfo();
-   // }
+   DatabaseOutput outputHandling;
+  
+   if(argc == 3){
+      if (atoi(argv[2]) != 0) {
+   	 gammas.push_back(argv[2]);
+   	 outputHandling.VerbosityHandler(gammas, "-g");
+   	 exit(1);
+      }else {
+   	 openInterface.OutputHelpInfo();
+      }
+   }else if(argc == 4) {
+      if(atoi(argv[2]) != 0 &&  atoi(argv[3]) != 0) {
+   	 gammas.push_back(argv[2]);
+   	 gammas.push_back(argv[3]);
+   	 outputHandling.VerbosityHandler(gammas, "-r");
+   	 exit(1);
+      }else if (atoi(argv[2]) == 0 &&  atoi(argv[3]) != 0) {
+   	 gammas.push_back(argv[3]);
+   	 outputHandling.VerbosityHandler(gammas, argv[2]);
+      }else {
+   	 openInterface.OutputHelpInfo();
+      }	 
+   }else if(argc == 5) {
+      if(atoi(argv[2]) == 0 && atoi(argv[3]) != 0 
+   	 && atoi(argv[4]) != 0) {
+   	 gammas.push_back(argv[3]);
+   	 gammas.push_back(argv[4]);
+   	 outputHandling.VerbosityHandler(gammas, "-g");
+      }else {
+   	 openInterface.OutputHelpInfo();
+      }
+   } else {
+      openInterface.OutputHelpInfo();
+   }
 }
