@@ -21,7 +21,7 @@ class DatabaseInput : public DatabaseInterface
    std::time_t GetNewModTime(const std::string &fileName);
    std::vector<std::string> BuildCommand(void);
    std::vector<std::string> GetComment(std::string &line);
-   
+
    void CommandSizeCheck(void);
    void CompareModTimes(void);
    void ExecuteBeginAndEnd(const std::string &command);

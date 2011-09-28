@@ -7,6 +7,9 @@
 
 #include "DatabaseInterface.h"
 
+//Define the compairson Function for sort
+bool CoinComparison(const std::string &alpha, const std::string &beta);
+
 class DatabaseOutput : public DatabaseInterface
 {
  public:
@@ -23,7 +26,7 @@ class DatabaseOutput : public DatabaseInterface
    void RetrieveInformation(const std::string &table);
 
    std::vector<std::string> gammas_;
-   std::vector<int> coincidences_;
+   std::vector<std::string> coincidences_;
    std::string table_;
    std::vector<std::pair<std::string, std::string> > data_;
 };

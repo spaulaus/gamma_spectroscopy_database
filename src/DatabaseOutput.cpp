@@ -45,6 +45,16 @@ string DatabaseOutput::BuildCommand(void)
 }
 
 
+//********** CoinCompairson **********
+bool CoinCompairson(const string &alpha, const string &beta)
+{
+   if(atoi(alpha.c_str()) < atoi(beta.c_str()))
+      return(true);
+   else
+      return(false);
+}
+
+
 //********** DatabaseOutput **********
 DatabaseOutput::DatabaseOutput()
 {
@@ -61,16 +71,16 @@ DatabaseOutput::~DatabaseOutput()
 void DatabaseOutput::OutputHeading(void)
 {
    if(table_ == "generalInfo"){
-      cout << "General Information" << endl 
+      cout << endl << "General Information" << endl 
 	   << "---------------------------" << endl;
    }else if(table_ == "coinInfo"){
-      cout << "Coincidence Information" << endl 
+      cout << endl << "Coincidence Information" << endl 
 	   << "---------------------------" << endl;
    }else if(table_ == "fitInfo") {
-      cout << "Fit Information" << endl 
+      cout << endl << "Fit Information" << endl 
 	   << "---------------------------" << endl;
    }else if(table_ == "range") {
-      cout << "Gammas found in this range: ";
+      cout << endl << "Gammas found in this range: ";
    }
 }
 
@@ -78,12 +88,12 @@ void DatabaseOutput::OutputHeading(void)
 //********** OutputInformation **********
 void DatabaseOutput::OutputInformation(void)
 {
-   int area = 0;
+   double value = 0;
 
    if(table_ == "coincidences") {
-      sort(coincidences_.begin(), coincidences_.end());
-      cout << "These Gammas are in coincidence: ";
-      for(vector<int>::iterator it = coincidences_.begin();
+      sort(coincidences_.begin(), coincidences_.end(), CoinCompairson);
+      cout << "These gammas are in coincidence: ";
+      for(vector<string>::iterator it = coincidences_.begin();
 	  it != coincidences_.end(); it++) {
 	 cout << *it << ",";
       }
@@ -94,18 +104,19 @@ void DatabaseOutput::OutputInformation(void)
 	 if(table_ == "range") {
 	    cout << (*it).second << ", ";
 	 }else if((*it).first == "Comments") {
-	    cout << (*it).first << " = " << (*it).second << endl << endl;
+	    cout << (*it).first << " = " << (*it).second << endl;
 	 }else{
-	    if((*it).first == "Area") {
-	       area = atoi((*it).second.c_str());
+	    if((*it).first == "Area" || (*it).first == "HalfLife") {
+	       value = atof((*it).second.c_str());
 	       cout << (*it).first << " = " << (*it).second;
 	    } else if((*it).first == "PercentErr") {
-	       cout << " +- " << area * (atof((*it).second.c_str())/100) << endl;
+	       cout << " +- " << value * (atof((*it).second.c_str())/100) << endl;
 	    } else {
 	       cout << (*it).first << " = " << (*it).second << endl;
 	    }
 	 }
       }
+      cout << endl;
    }
    cout << endl;
 }
@@ -132,7 +143,7 @@ void DatabaseOutput::RetrieveInformation(const std::string &table)
       	       string colName = (char*)sqlite3_column_name(statement,col);
       	       string colValue = (char*)sqlite3_column_text(statement, col);
 	       if(table == "coincidences" && col == 1){
-		  coincidences_.push_back(atoi(colValue.c_str()));
+		  coincidences_.push_back(colValue.c_str());
 	       }else
 		  data_.push_back(make_pair(colName, colValue));
    	    }

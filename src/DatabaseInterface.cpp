@@ -39,7 +39,8 @@ void DatabaseInterface::CreateDatabase(const string &name)
 			    "not null, CoinGamma integer not null)");
       commandList.push_back("CREATE TABLE generalInfo(Gamma integer "
 			    "primary key asc not null, Spectrum integer, "
-			    "Nucleus varchar, HalfLife real, Comments varchar)");
+			    "Nucleus varchar, HalfLife real, PercentErr real,"
+			    "Comments varchar)");
       commandList.push_back("CREATE TABLE fitInfo(Gamma integer primary key "
 			    "asc not null, Spectrum integer, FitLow integer, "
 			    "FitHigh integer, Centroid real, Area integer, "

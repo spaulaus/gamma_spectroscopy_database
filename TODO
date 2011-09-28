@@ -1,4 +1,9 @@
 1. Implement a way to delete records from the database.
 2. Clean up the outputting.
 3. Output the conicident gammas and the gammas that have it as a coincidence.
-
+4. Search by other things than the gamma energy.
+5. Implement efficiency, log(ft), B(GT), intensity
+6. Probably need some more info for the coincidence gammas, such as fitted 
+     information. Maybe these should be moved to a separate text file?
+7. Figure out some way to construct the decay scheme. 
+8. Fix the range output to accept an inverted gamma range (B < A). 

@@ -37,11 +37,12 @@ vector<string> DatabaseInput::BuildCommand(void)
    tempCommands.push_back(command.str());
 
    if(coinGammas_.size() != 0 && tableName_ == "coinInfo") {
+      tempCommands.push_back("delete from coincidences");
       for(vector<string>::iterator it = coinGammas_.begin(); 
 	  it != coinGammas_.end(); it++) {
 	 stringstream coins; 
 	 coins << "insert or replace into coincidences values(" 
-	       << values_.at(0) << "," << *it << ")";
+	       << values_.at(0) << ",'" << *it << "')";
 	 tempCommands.push_back(coins.str());
       }
    }
@@ -54,7 +55,7 @@ vector<string> DatabaseInput::BuildCommand(void)
 void DatabaseInput::CommandSizeCheck(void)
 {
    bool wrongSize = false;
-   if(tableName_ == "generalInfo" && values_.size() != 5)
+   if(tableName_ == "generalInfo" && values_.size() != 6)
       wrongSize = true;
    else if(tableName_ == "coinInfo" && values_.size() != 9)
       wrongSize = true;
@@ -64,8 +65,9 @@ void DatabaseInput::CommandSizeCheck(void)
       wrongSize = false;
       
    if(wrongSize){
-      cout << endl << "There is a missing value in " << tableName_ 
-	   << " on line" << lineNo_ << ".  Please correct this." << endl;
+      cout << endl << "There is a(are) missing value(s) in " << tableName_ 
+	   << " on line number " << lineNo_ << ".  Please correct this." << endl 
+	   << endl;
       exit(1);
    }
 }
