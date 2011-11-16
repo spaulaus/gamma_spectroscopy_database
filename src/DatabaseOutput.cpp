@@ -95,7 +95,7 @@ void DatabaseOutput::OutputInformation(void)
       cout << "These gammas are in coincidence: ";
       for(vector<string>::iterator it = coincidences_.begin();
 	  it != coincidences_.end(); it++) {
-	 cout << *it << ",";
+	 cout << *it << ", ";
       }
       cout << endl;
    }else {

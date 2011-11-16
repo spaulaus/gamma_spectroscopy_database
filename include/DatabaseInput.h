@@ -24,7 +24,7 @@ class DatabaseInput : public DatabaseInterface
 
    void CommandSizeCheck(void);
    void CompareModTimes(void);
-   void ExecuteBeginAndEnd(const std::string &command);
+   void ExecuteSimpleCommands(const std::string &command);
    void FillDatabase(void);
    void GetOldModTimes(void);
    void ReadInformation(void);

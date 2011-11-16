@@ -27,26 +27,28 @@ int main(int argc, char* argv[])
    string databaseName = argv[1];
    if(databaseName == "-n") {
       openInterface.CreateDatabase(argv[2]);
+      
       exit(1);
    }else {
       openInterface.OpenDatabase(databaseName);
    }
    
    //Check the existence and modification time of the data files.
+   //Fill the database if necessary.
    DatabaseInput fillDatabase;
-   
-   //Open the outputting interface.
+   //Start the output interface.
    DatabaseOutput outputHandling;
-  
-   if(argc == 3){
+   
+   switch(argc) {
+   case 3:
       if (atoi(argv[2]) != 0) {
    	 gammas.push_back(argv[2]);
    	 outputHandling.VerbosityHandler(gammas, "-g");
    	 exit(1);
-      }else {
+      }else
    	 openInterface.OutputHelpInfo();
-      }
-   }else if(argc == 4) {
+      break;
+   case 4: 
       if(atoi(argv[2]) != 0 &&  atoi(argv[3]) != 0) {
    	 gammas.push_back(argv[2]);
    	 gammas.push_back(argv[3]);
@@ -55,19 +57,19 @@ int main(int argc, char* argv[])
       }else if (atoi(argv[2]) == 0 &&  atoi(argv[3]) != 0) {
    	 gammas.push_back(argv[3]);
    	 outputHandling.VerbosityHandler(gammas, argv[2]);
-      }else {
+      }else 
    	 openInterface.OutputHelpInfo();
-      }	 
-   }else if(argc == 5) {
+      break;
+   case 5:
       if(atoi(argv[2]) == 0 && atoi(argv[3]) != 0 
    	 && atoi(argv[4]) != 0) {
    	 gammas.push_back(argv[3]);
    	 gammas.push_back(argv[4]);
    	 outputHandling.VerbosityHandler(gammas, "-g");
-      }else {
+      }else
    	 openInterface.OutputHelpInfo();
-      }
-   } else {
+      break;
+   default:
       openInterface.OutputHelpInfo();
-   }
+   }//switch(argc)
 }

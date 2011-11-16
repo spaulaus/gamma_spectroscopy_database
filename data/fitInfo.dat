@@ -1,6 +1,8 @@
 #Gamma spectrum fitLow fitHigh Centroid Area %err FWHM Low/High?(0 or 1) Comments
 #Single Quotes in the comments will cause the SQL to throw up.
-41 1501 36 48 41.9 113948 1.8 2.07 0 ""
+41 1501 36 48 41.9 113948 1.13 2.36 0 "aldiojfahg"
+41 1681 46 48 41.9 15963 1.7 3.25 0 "adfafwef"
+41 1500 26 48 41.9 12369 1.8 9.36 1 "eyahad"
 
 52 1501 48 59 52.9 36471 2.3 2.40 0 "" 
 

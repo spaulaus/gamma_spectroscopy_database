@@ -37,7 +37,6 @@ vector<string> DatabaseInput::BuildCommand(void)
    tempCommands.push_back(command.str());
 
    if(coinGammas_.size() != 0 && tableName_ == "coinInfo") {
-      tempCommands.push_back("delete from coincidences");
       for(vector<string>::iterator it = coinGammas_.begin(); 
 	  it != coinGammas_.end(); it++) {
 	 stringstream coins; 
@@ -46,7 +45,6 @@ vector<string> DatabaseInput::BuildCommand(void)
 	 tempCommands.push_back(coins.str());
       }
    }
-
    return(tempCommands);
 }//string DatabaseInput::BuildCommand
 
@@ -61,12 +59,16 @@ void DatabaseInput::CommandSizeCheck(void)
       wrongSize = true;
    else if(tableName_ == "fitInfo" && values_.size() != 10)
       wrongSize = true;
+   else if(tableName_ == "coinFitInfo" && values_.size()!= 11)
+      wrongSize = true;
    else
       wrongSize = false;
       
-   if(wrongSize){
+   if(wrongSize) {
       cout << endl << "There is a(are) missing value(s) in " << tableName_ 
-	   << " on line number " << lineNo_ << ".  Please correct this." << endl 
+	   << " on line number " << lineNo_ << ".  Maybe " 
+	   << "you've added an extra '\"'." << endl 
+	   << "Please correct this." << endl 
 	   << endl;
       exit(1);
    }
@@ -92,7 +94,7 @@ void DatabaseInput::CompareModTimes(void)
 
 
 //********** ExecuteBegin **********
-void DatabaseInput::ExecuteBeginAndEnd(const string &command)
+void DatabaseInput::ExecuteSimpleCommands(const string &command)
 {
    char *errorMessage = 0;
    int rc = sqlite3_exec(database, command.c_str(), 
@@ -197,11 +199,12 @@ DatabaseInput::DatabaseInput(void)
    newTimes_.insert(make_pair("coinInfo", GetNewModTime("coinInfo")));
    newTimes_.insert(make_pair("generalInfo", GetNewModTime("generalInfo")));
    newTimes_.insert(make_pair("fitInfo", GetNewModTime("fitInfo")));
+   newTimes_.insert(make_pair("coinFitInfo", GetNewModTime("coinFitInfo")));
 
-   ExecuteBeginAndEnd("begin");
+   ExecuteSimpleCommands("begin");
    GetOldModTimes();
    CompareModTimes();
-   ExecuteBeginAndEnd("commit");
+   ExecuteSimpleCommands("commit");
 }
 
 
@@ -235,12 +238,11 @@ void DatabaseInput::ReadInformation(void)
 	 if(tableName_ == "coinInfo") {
 	    vector<string> tempCoin = GetComment(line);
 	    line = tempCoin.at(0);
-	    
+
 	    stringstream tempStream;
 	    tempStream << tempCoin.at(1);
 	    while(tempStream >> temp)
 	       coinGammas_.push_back(temp);
-	    sort(coinGammas_.begin(), coinGammas_.end());
 	 }	 
 	 
 	 vector<string> tempComment = GetComment(line);
@@ -263,6 +265,7 @@ void DatabaseInput::ReadInformation(void)
 	 values_.clear();
 	 coinGammas_.clear();
       } // while(coinInfoFile.good())
+      inputFile.close();
    }else {
       cout << "Couldn't open \"" << tableName_ << ".dat.\"" << endl
 	   << "  This is fatal!" << endl << "Exiting" << endl;
