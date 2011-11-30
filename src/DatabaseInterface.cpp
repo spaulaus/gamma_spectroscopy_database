@@ -17,6 +17,7 @@ using std::vector;
 
 sqlite3 *DatabaseInterface::database;
 string DatabaseInterface::databaseName;
+string DatabaseInterface::filePath;
 
 //********** CreateDatabase **********
 void DatabaseInterface::CreateDatabase(const string &name)
@@ -99,10 +100,19 @@ DatabaseInterface::~DatabaseInterface()
 }
 
 
+//********** ExtractFilePath **********
+void DatabaseInterface::ExtractFilePath(void)
+{
+   size_t found = databaseName.find_last_of("/\\");
+   filePath = databaseName.substr(0,found);
+}
+
+
 //********** OpenDatabase **********
 void DatabaseInterface::OpenDatabase(const string &dbName)
 {
    databaseName = dbName;
+   ExtractFilePath();
    int returnCode = sqlite3_open_v2(databaseName.c_str(), &database, 
 				    SQLITE_OPEN_READWRITE,"unix");
    if(returnCode) {

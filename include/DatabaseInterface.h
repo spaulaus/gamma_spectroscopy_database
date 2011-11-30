@@ -20,9 +20,11 @@ class DatabaseInterface
    void CreateDatabase(const std::string &name);
    void OpenDatabase(const std::string &dbName);
    void OutputHelpInfo(void);
+   void ExtractFilePath(void);
    
  protected:
    static sqlite3 *database;
    static std::string databaseName;
+   static std::string filePath;
 }; //class DatabaseInterface
 #endif //__DATABASEINTERFACE_H_

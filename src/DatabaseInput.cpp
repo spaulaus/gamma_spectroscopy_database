@@ -157,7 +157,7 @@ time_t DatabaseInput::GetNewModTime(const string &tableName)
 {
    struct stat fileAttributes;
    stringstream tempFileName;
-   tempFileName << "data/" << tableName << ".dat";
+   tempFileName << filePath << "/" << tableName << ".dat";
    int statResult = stat(tempFileName.str().c_str(), &fileAttributes);
 
    if(statResult == -1) {
@@ -196,6 +196,8 @@ void DatabaseInput::GetOldModTimes(void)
 //********** DatabaseInput **********
 DatabaseInput::DatabaseInput(void)
 {
+   ExtractFilePath();
+
    newTimes_.insert(make_pair("coinInfo", GetNewModTime("coinInfo")));
    newTimes_.insert(make_pair("generalInfo", GetNewModTime("generalInfo")));
    newTimes_.insert(make_pair("fitInfo", GetNewModTime("fitInfo")));
@@ -219,7 +221,7 @@ void DatabaseInput::ReadInformation(void)
 {
    lineNo_ = 0;
    stringstream tempFileName;
-   tempFileName << "data/" << tableName_ << ".dat";
+   tempFileName << filePath << "/" << tableName_ << ".dat";
    ifstream inputFile(tempFileName.str().c_str());
    if(inputFile.is_open()) {
       while(inputFile.good()) {
