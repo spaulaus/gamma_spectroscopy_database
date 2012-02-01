@@ -13,21 +13,24 @@ bool CoinComparison(const std::string &alpha, const std::string &beta);
 class DatabaseOutput : public DatabaseInterface
 {
  public:
-   DatabaseOutput();
-   ~DatabaseOutput();
+   DatabaseOutput(){};
+   ~DatabaseOutput(){};
 
-   void VerbosityHandler(const std::vector<std::string> &gammas, 
-			 const std::string &verbosity);
+   void ParseData(const std::vector<std::string> &tables,
+		  const std::vector<std::string> &gammas);
+   void OutputHelpInfo(void);
 
  private:
-   std::string BuildCommand(void);
+   DatabaseInterface interface;
+   double EfficiencyCalc(const double &area);
+   std::vector<std::string> BuildCommand(void);
    void OutputHeading(void);
-   void OutputInformation(void);
-   void RetrieveInformation(const std::string &table);
+   void OutputData(void);
 
    std::vector<std::string> gammas_;
    std::vector<std::string> coincidences_;
    std::string table_;
-   std::vector<std::pair<std::string, std::string> > data_;
+   std::vector<std::pair<std::string, std::string> > *data_;
+   std::vector<std::pair<std::string, std::string> > efficiency_;
 };
 #endif //__DATABASEOUTPUT_H_

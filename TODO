@@ -1,7 +1,7 @@
 1. Clean up the outputting.
 2. Output the conicident gammas and the gammas that have it as a coincidence.
 3. Search by other things than the gamma energy.
-4. Implement efficiency, log(ft), B(GT), intensity
+4. Implement log(ft), B(GT), intensity
 5. Figure out some way to construct the decay scheme. 
 6. Fix the range output to accept an inverted gamma range (B < A). 
 7. Update help output.

@@ -49,6 +49,50 @@ vector<string> DatabaseInput::BuildCommand(void)
 }//string DatabaseInput::BuildCommand
 
 
+//********** CreateDatabase **********
+void DatabaseInput::CreateDatabase(void)
+{
+   vector<string> commandList;
+   commandList.push_back("create table coinInfo(Gamma integer primary key "
+			 "asc not null, Spectrum integer, GammaLow integer, "
+			 "GammaHigh integer, BkgLowA integer, "
+			 "BkgHighA integer,BkgLowB integer, "
+			 "BkgHighB integer, Comments varchar)");
+   commandList.push_back("CREATE TABLE coinFitInfo(Gamma integer asc "
+			 "not null, CoinGamma integer not null, "
+			 "Spectrum integer, FitLow integer, "
+			 "FitHigh integer, Centroid real, Area integer, "
+			 "PercentErr real, FWHM real, LowHighMethod integer, "
+			 "Comments varchar, primary key (Gamma, CoinGamma))");
+   commandList.push_back("create table coincidences(Gamma integer asc "
+			 "not null, CoinGamma integer not null, "
+			 "primary key (Gamma, CoinGamma))");
+   commandList.push_back("CREATE TABLE generalInfo(Gamma integer "
+			 "primary key asc not null, Spectrum integer, "
+			 "Nucleus varchar, HalfLife real, PercentErr real,"
+			 "Comments varchar)");
+   commandList.push_back("CREATE TABLE fitInfo(Gamma integer "
+			 "asc not null, Spectrum integer, FitLow integer, "
+			 "FitHigh integer, Centroid real, Area integer, "
+			 "PercentErr real, FWHM real, LowHighMethod integer, "
+			 "Comments varchar, primary key (Gamma, Spectrum))");
+   commandList.push_back("CREATE TABLE eff(name real primary key asc "
+			 "not null, value real, error real)");
+   commandList.push_back("CREATE TABLE modTimes(FileName varchar primary key "
+			 "asc not null, ModTime date not null)");
+   commandList.push_back("insert into modTimes values('generalInfo', 0)");
+   commandList.push_back("insert into modTimes values('coinInfo', 0)");
+   commandList.push_back("insert into modTimes values('fitInfo',0)");
+   commandList.push_back("insert into modTimes values('coinFitInfo',0)");
+   commandList.push_back("insert into modTimes values('eff',0)");
+   
+   string databaseName = interface.GetDatabaseName();
+   cout << "Begin creating database: " << databaseName << endl;
+   interface.ExecuteCommand(commandList);
+   cout << "Successfully created database: " << databaseName << endl;
+}//void DatabaseInterface::CreateDatabase
+
+
 //********** CommandSizeCheck **********
 void DatabaseInput::CommandSizeCheck(void)
 {
@@ -61,9 +105,9 @@ void DatabaseInput::CommandSizeCheck(void)
       wrongSize = true;
    else if(tableName_ == "coinFitInfo" && values_.size()!= 11)
       wrongSize = true;
-   else
-      wrongSize = false;
-      
+   else if(tableName_ == "eff" && values_.size() != 3)
+      wrongSize = true;
+         
    if(wrongSize) {
       cout << endl << "There is a(are) missing value(s) in " << tableName_ 
 	   << " on line number " << lineNo_ << ".  Maybe " 
@@ -71,58 +115,6 @@ void DatabaseInput::CommandSizeCheck(void)
 	   << "Please correct this." << endl 
 	   << endl;
       exit(1);
-   }
-}
-
-
-//********** CompareModTimes **********
-void DatabaseInput::CompareModTimes(void)
-{
-   for(map<string, time_t>::iterator itOld = oldTimes_.begin(); 
-       itOld != oldTimes_.end(); itOld++) {
-      map<string,time_t>::iterator itNew = newTimes_.find((*itOld).first);
-      tableName_ = (*itNew).first;
-
-      if((*itOld).second < (*itNew).second) {
-	 ReadInformation();
-	 UpdateModTimes((*itNew).second);
-      }else {
-      	 continue;
-      }
-   }	    
-}//void DatabaseInput::CompareModTimes
-
-
-//********** ExecuteBegin **********
-void DatabaseInput::ExecuteSimpleCommands(const string &command)
-{
-   char *errorMessage = 0;
-   int rc = sqlite3_exec(database, command.c_str(), 
-   			 NULL, NULL, &errorMessage);
-   if(rc != SQLITE_OK) {
-      cout << "Error updating the database with new info from the datafiles."
-   	   << endl << "ERROR:" << errorMessage << endl;
-      sqlite3_free(errorMessage);
-      exit(1);
-   } 
-}
-
-
-//********** FillDatabase **********
-void DatabaseInput::FillDatabase(void)
-{
-   vector<string> commands = BuildCommand();
-   for(vector<string>::iterator it = commands.begin();
-       it != commands.end(); it++) {
-      char *errorMessage = 0;
-      int rc = sqlite3_exec(database, (*it).c_str(), 
-      			    NULL, NULL, &errorMessage);
-      if(rc != SQLITE_OK) {
-      	 cout << "Error updating the database with new info from the datafiles."
-      	      << endl << "ERROR:" << errorMessage << endl;
-      	 sqlite3_free(errorMessage);
-      	 exit(1);
-      }
    }
 }
 
@@ -153,83 +145,77 @@ vector<string> DatabaseInput::GetComment(string &line)
 
 
 //********** GetNewModTime **********
-time_t DatabaseInput::GetNewModTime(const string &tableName)
+void DatabaseInput::StatDataFiles(void)
 {
-   struct stat fileAttributes;
-   stringstream tempFileName;
-   tempFileName << filePath << "/" << tableName << ".dat";
-   int statResult = stat(tempFileName.str().c_str(), &fileAttributes);
-
-   if(statResult == -1) {
-      cout << endl << "Problem with the data file \"" << tableName
-	   << "\".  It does not seem to exist." << endl << endl;
-      exit(1);
-   }else {
-      return(fileAttributes.st_mtime);
+   const char* arr[] = 
+      {"coinInfo", "generalInfo","fitInfo", "coinInfo", "eff"};
+   vector<string> fileNames (arr, arr +sizeof(arr) / sizeof(arr[0]));
+   for(unsigned int i = 0; i < fileNames.size(); i++) {
+      struct stat fileAttributes;
+      stringstream tempFileName;
+      tempFileName << filePath_ << "/" << fileNames[i] << ".dat";
+      int statResult = stat(tempFileName.str().c_str(), &fileAttributes);
+      
+      if(statResult == -1) {
+	 cout << endl << "Problem with the data file \"" << fileNames[i]
+	      << "\".  It does not seem to exist." << endl << endl;
+	 exit(1);
+      }else {
+	 newTimes_.insert(make_pair(fileNames[i], fileAttributes.st_mtime));
+      }
    }
 }
 
 
 //********** GetOldModTimes **********
-void DatabaseInput::GetOldModTimes(void)
+void DatabaseInput::CompareModTimes(void)
 {
-   sqlite3_stmt *statement; 
-   bool prepared = 
-      sqlite3_prepare_v2(database, "select * from modTimes", 
- 			 -1, &statement, 0) == SQLITE_OK;
-   if(prepared) {
-      while (true) {
-	 int result = sqlite3_step(statement);
-	 if(result == SQLITE_ROW) {
-	    string fileName = (char*)sqlite3_column_text(statement,0);
-	    int modTime = atoi((char*)sqlite3_column_text(statement,1));
-	    oldTimes_.insert(make_pair(fileName, modTime));
-	 }else {
-	    break;
-	 }
-      }//while(true)
-      sqlite3_finalize(statement);
-   }//if(prepared)
+   vector<string> command (1, "select * from modTimes");
+   interface.QueryDatabase(command);
+   vector<pair<string,string> > *oldTimes = interface.GetRequestedData();
+
+   for(unsigned int i = 0; i < oldTimes->size(); i+=2) {
+      map<string,time_t>::iterator itNew = 
+	 newTimes_.find(oldTimes->at(i).second);
+      tableName_ = oldTimes->at(i).second;
+      if(atoi(oldTimes->at(i+1).second.c_str()) < (*itNew).second) {
+       	 ReadDataFiles();
+	 UpdateModTimes((*itNew).second);
+      }else {
+       	 continue;
+      }
+   }	    
 }
 
 
 //********** DatabaseInput **********
-DatabaseInput::DatabaseInput(void)
+DatabaseInput::DatabaseInput()
 {
-   ExtractFilePath();
-
-   newTimes_.insert(make_pair("coinInfo", GetNewModTime("coinInfo")));
-   newTimes_.insert(make_pair("generalInfo", GetNewModTime("generalInfo")));
-   newTimes_.insert(make_pair("fitInfo", GetNewModTime("fitInfo")));
-   newTimes_.insert(make_pair("coinFitInfo", GetNewModTime("coinFitInfo")));
-
-   ExecuteSimpleCommands("begin");
-   GetOldModTimes();
+   filePath_ = interface.GetFilePath();
+   
+   StatDataFiles();
+   vector<string> temp0 (1,"begin");
+   interface.ExecuteCommand(temp0);
    CompareModTimes();
-   ExecuteSimpleCommands("commit");
+   vector<string> temp1 (1, "commit");
+   interface.ExecuteCommand(temp1);
 }
 
 
-//********** ~DatabaseInput **********
-DatabaseInput::~DatabaseInput()
-{
-}
-
-
-//********** ReadInformation **********
-void DatabaseInput::ReadInformation(void)
+//********** ReadDataFiles **********
+void DatabaseInput::ReadDataFiles(void)
 {
    lineNo_ = 0;
    stringstream tempFileName;
-   tempFileName << filePath << "/" << tableName_ << ".dat";
+   tempFileName << filePath_ << "/" << tableName_ << ".dat";
    ifstream inputFile(tempFileName.str().c_str());
    if(inputFile.is_open()) {
       while(inputFile.good()) {
 	 values_.clear();
+	 coinGammas_.clear();
 	 lineNo_++;
 
-	 string line;
-	 string temp;
+	 string line, temp;
 	 	 
 	 //Skip over the comment lines here. 
 	 getline(inputFile, line);
@@ -246,26 +232,28 @@ void DatabaseInput::ReadInformation(void)
 	    while(tempStream >> temp)
 	       coinGammas_.push_back(temp);
 	 }	 
-	 
-	 vector<string> tempComment = GetComment(line);
-	 line = tempComment.at(0);
-	 string comment = tempComment.at(1);
+	
+	 string comment = "";
+	 if(tableName_ != "eff") {
+	    vector<string> tempComment = GetComment(line);
+	    line = tempComment.at(0);
+	    comment = tempComment.at(1);
+	 }
 
 	 vector<string> tempData;
 	 stringstream lineParse;
 	 lineParse << line;
 	 while(lineParse >> temp)
 	    tempData.push_back(temp);
-	 tempData.push_back(comment);
+	 if(tableName_ != "eff")
+	    tempData.push_back(comment);
 	 values_ = tempData;
 	 
 	 //Do operations to update/fill the database with the
 	 //collected values.  
 	 CommandSizeCheck();
-	 FillDatabase();
-
-	 values_.clear();
-	 coinGammas_.clear();
+	 vector<string> commands = BuildCommand();
+	 interface.ExecuteCommand(commands);
       } // while(coinInfoFile.good())
       inputFile.close();
    }else {
@@ -282,13 +270,6 @@ void DatabaseInput::UpdateModTimes(const time_t &modTime)
    stringstream command;
    command << "update modTimes set ModTime=" << modTime
 	   << " where FileName='" << tableName_ << "'";
-   
-   char *errorMessage = 0;
-   int rc = sqlite3_exec(database, command.str().c_str(), NULL, 0, &errorMessage);
-   if(rc != SQLITE_OK) {
-      cout << "Error updating the data file modification times." << endl
-	   << "ERROR:" << errorMessage << endl;
-      sqlite3_free(errorMessage);
-      exit(1);
-   }
+   vector<string> temp (1,command.str());
+   interface.ExecuteCommand(temp);
 }

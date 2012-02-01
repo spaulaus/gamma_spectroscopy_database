@@ -11,29 +11,29 @@
 
 #include "DatabaseInterface.h"
 
-class DatabaseInput : public DatabaseInterface
+class DatabaseInput
 {
  public:
    DatabaseInput();
-   ~DatabaseInput();
+   DatabaseInput(const std::string &flag) {CreateDatabase();};
+   ~DatabaseInput(){};
 
  private:
-   std::time_t GetNewModTime(const std::string &fileName);
+   DatabaseInterface interface;
    std::vector<std::string> BuildCommand(void);
    std::vector<std::string> GetComment(std::string &line);
 
    void CommandSizeCheck(void);
    void CompareModTimes(void);
-   void ExecuteSimpleCommands(const std::string &command);
-   void FillDatabase(void);
-   void GetOldModTimes(void);
-   void ReadInformation(void);
+   void CreateDatabase(void); 
+   void ReadDataFiles(void);
+   void StatDataFiles(void);
    void UpdateModTimes(const std::time_t &modTime);
-      
+
    int lineNo_;
    std::map<std::string, std::time_t> newTimes_;
-   std::map<std::string, std::time_t> oldTimes_;
    std::string tableName_;
+   std::string filePath_;
    std::vector<std::string> values_;
    std::vector<std::string> coinGammas_;
 }; //class DatabaseInterface

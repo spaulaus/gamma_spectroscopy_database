@@ -9,15 +9,23 @@
 #include <sstream>
 
 #include <cstdlib>
+#include <cmath>
 
 #include "DatabaseOutput.h"
 
 using namespace std;
 
 //********** BuildCommand **********
-string DatabaseOutput::BuildCommand(void)
+vector<string> DatabaseOutput::BuildCommand(void)
 {
+   vector<string> temp;
    stringstream command;
+
+   if(table_ == "eff") {
+      temp.push_back("select * from eff");
+      return(temp);
+   }
+
    switch(gammas_.size()) {
    case 0:
       cout << "The vector containing the gammas for search is empty." 
@@ -41,29 +49,38 @@ string DatabaseOutput::BuildCommand(void)
       exit(1);
       break;
    }
-   return (command.str());
+   temp.push_back(command.str());
+   return (temp);
 }
 
 
 //********** CoinCompairson **********
-bool CoinCompairson(const string &alpha, const string &beta)
+bool CoinCompairson(const pair<string, string> &alpha, 
+		    const pair<string, string> &beta)
 {
-   if(atoi(alpha.c_str()) < atoi(beta.c_str()))
+   if(atoi(alpha.second.c_str()) < atoi(beta.second.c_str()))
       return(true);
    else
       return(false);
 }
 
 
-//********** DatabaseOutput **********
-DatabaseOutput::DatabaseOutput()
+//********** EfficiencyCalc **********
+double DatabaseOutput::EfficiencyCalc(const double &area)
 {
-}
-
-
-//********** ~DatabaseOutput **********
-DatabaseOutput::~DatabaseOutput()
-{
+   double a = atof(efficiency_.at(1).second.c_str());
+   double b = atof(efficiency_.at(4).second.c_str());
+   double c = atof(efficiency_.at(7).second.c_str());
+   double d = atof(efficiency_.at(10).second.c_str());
+   double e = atof(efficiency_.at(13).second.c_str());
+   double f = atof(efficiency_.at(16).second.c_str());
+   double g = atof(efficiency_.at(19).second.c_str());
+   double E1 = 50.;
+   double E2 = 1000.;
+   
+   double eff = exp(pow(pow((a+b*log10(area/E1)+c*pow(log10(area/E1),2)),-g) + 
+    			pow(d+e*log10(area/E2)+f*pow(log10(area/E2),2), -g), -1/g));
+   return(eff);
 }
 
 
@@ -85,100 +102,92 @@ void DatabaseOutput::OutputHeading(void)
 }
 
 
-//********** OutputInformation **********
-void DatabaseOutput::OutputInformation(void)
+//********** OutputData **********
+void DatabaseOutput::OutputData(void)
 {
-   double value = 0;
-
+   double gammaEnergy = 0, efficiency = 0, temp = 0;
+   string label = "", value = "";
+   
    if(table_ == "coincidences") {
-      sort(coincidences_.begin(), coincidences_.end(), CoinCompairson);
+      sort(data_->begin(), data_->end(), CoinCompairson);
       cout << "These gammas are in coincidence: ";
-      for(vector<string>::iterator it = coincidences_.begin();
-	  it != coincidences_.end(); it++) {
-	 cout << *it << ", ";
+      for(vector<pair<string,string> >::iterator it = data_->begin();
+	  it != data_->end(); it++) {
+	 if((*it).first == "CoinGamma")
+	    cout << (*it).second << ", ";
       }
       cout << endl;
    }else {
-      for(vector<pair<string,string> >::iterator it = data_.begin(); 
-	  it != data_.end(); it++){
-	 if(table_ == "range") {
-	    cout << (*it).second << ", ";
-	 }else if((*it).first == "Comments") {
-	    cout << (*it).first << " = " << (*it).second << endl;
-	 }else{
-	    if((*it).first == "Area" || (*it).first == "HalfLife") {
-	       value = atof((*it).second.c_str());
-	       cout << (*it).first << " = " << (*it).second;
-	    } else if((*it).first == "PercentErr") {
-	       cout << " +- " << value * (atof((*it).second.c_str())/100) << endl;
-	    } else {
-	       cout << (*it).first << " = " << (*it).second << endl;
-	    }
+      for(vector<pair<string,string> >::iterator it = data_->begin(); 
+	  it != data_->end(); it++){
+	 label = (*it).first;
+	 value = (*it).second;
+	 
+	 if(table_ == "range" && label == "Gamma")  {
+	    cout << value << ", ";
+	    continue;
+	 }
+	 
+	 if(label == "Centroid") {
+	    gammaEnergy = atof(value.c_str());
+	    cout << label << " = " << value << endl;
+	 }else if(label == "Area") {
+	    efficiency = EfficiencyCalc(gammaEnergy) / 100;
+	    temp = atof(value.c_str()) * efficiency;
+	    it++;
+	    cout << label << " = " << temp << " +- " 
+		 << temp * (atof((*it).second.c_str())/100) << endl;
+	 } else if(label == "HalfLife") {
+	    it++;
+	    cout << label << " = " << value << " +- " 
+		 << atof(value.c_str()) * (atof((*it).second.c_str())/100) 
+		 << endl;
+	 } else {
+	    cout << label << " = " << value << endl;
 	 }
       }
       cout << endl;
    }
-   cout << endl;
 }
 
 
-//********** RetrieveInformation **********
-void DatabaseOutput::RetrieveInformation(const std::string &table)
+//********** OutputHelpInfo **********
+void DatabaseOutput::OutputHelpInfo(void)
 {
-   table_ = table;
-   
-   string command = BuildCommand();
-   sqlite3_stmt *statement;
-   bool prepared = 
-      sqlite3_prepare_v2(database, command.c_str(), 
-   			 -1, &statement, 0) == SQLITE_OK;
-   
-   if(prepared) {
-      int noColumns = sqlite3_column_count(statement);
-
-      while(true) {
-      	 int result = sqlite3_step(statement);
-      	 if(result == SQLITE_ROW) {
-      	    for(int col = 0; col < noColumns; col++) {
-      	       string colName = (char*)sqlite3_column_name(statement,col);
-      	       string colValue = (char*)sqlite3_column_text(statement, col);
-	       if(table == "coincidences" && col == 1){
-		  coincidences_.push_back(colValue.c_str());
-	       }else
-		  data_.push_back(make_pair(colName, colValue));
-   	    }
-      	 }else {
-   	    break;   
-      	 }
-      }//while(true)
-      sqlite3_finalize(statement);
-   }//if(prepared)
-   OutputHeading();
-   OutputInformation();
-   data_.clear();
-   coincidences_.clear();
+   cout << endl << "A program to help organize gammas." << endl
+	<< "Example: ./gammaSearch <database name> <flag> <gammaEnergy>" << endl
+	<< "Recognized flags (place before the energy): " << endl
+	<< "-h -> displays this message" << endl
+	<< "-g -> outputs general information (default)" << endl
+	<< "-c -> outputs general + coincidence information" << endl
+	<< "-f -> outputs general + fit information" << endl
+	<< "-v -> outputs all information" << endl 
+	<< "To search in an energy range simply enter the " 
+	<< "low (>0) and high bound." << endl
+	<< "General output for a range can be generated by passing" 
+	<< " the \"-g\" flag." << endl
+	<< "Problems? Contact stanpaulauskas@gmail.com" << endl << endl;
 }
 
 
-//********** Verbosity Handler **********
-void DatabaseOutput::VerbosityHandler(const vector<string> &gammas,
-				       const string &verbosity)
+//********** ParseData **********
+void DatabaseOutput::ParseData(const vector<string> &tables, 
+			       const vector<string> &gammas)
 {
    gammas_ = gammas;
 
-   if(verbosity == "-r")
-      RetrieveInformation("range");
-   else
-      RetrieveInformation("generalInfo");
+   table_ = "eff";
+   interface.QueryDatabase(BuildCommand());
+   data_ = interface.GetRequestedData();
+   for(unsigned int i = 0; i < data_->size(); i++)
+      efficiency_.push_back(data_->at(i));
    
-   if(verbosity == "-c") {
-      RetrieveInformation("coinInfo");
-      RetrieveInformation("coincidences");
-   }else if(verbosity == "-f") {
-      RetrieveInformation("fitInfo");
-   }else if(verbosity == "-v") {
-      RetrieveInformation("fitInfo");
-      RetrieveInformation("coinInfo");
-      RetrieveInformation("coincidences");
+   for(unsigned int i = 0; i < tables.size(); i++) {
+      table_ = tables[i];
+      interface.QueryDatabase(BuildCommand());
+      data_ = interface.GetRequestedData();
+      OutputHeading();
+      OutputData();
+      data_->clear();
    }
 }

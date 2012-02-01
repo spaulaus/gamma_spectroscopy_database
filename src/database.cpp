@@ -4,7 +4,6 @@
  ** Written: S.V. Paulauskas - 30 Aug 2011
  **********************************************************/
 #include <iostream>
-#include <vector>
 
 #include <cstdlib>
 
@@ -12,6 +11,7 @@
 #include "DatabaseInterface.h"
 #include "DatabaseOutput.h"
 #include "sqlite3.h"
+#include "unistd.h"
 
 using std::cout;
 using std::endl;
@@ -20,56 +20,67 @@ using std::vector;
 
 int main(int argc, char* argv[])
 {
-   vector<string> gammas;
+   vector<string> gammas, outputs;
+   int opt;
+   bool newDatabase = false;
+   
+   if(argc < 3) {
+      DatabaseOutput helpNeeded;
+      helpNeeded.OutputHelpInfo();
+      exit(1);
+   }
+      
+   while((opt = getopt (argc, argv, "cfvn:")) != -1)
+      switch(opt) {
+      case 'c': 
+	 outputs.push_back("generalInfo");
+	 outputs.push_back("coinInfo");
+	 outputs.push_back("coincidences");
+	 break;
+      case 'f':
+	 outputs.push_back("generalInfo");
+	 outputs.push_back("fitInfo");
+	 break;
+      case 'v':
+	 outputs.push_back("generalInfo");
+	 outputs.push_back("fitInfo");
+	 outputs.push_back("coinInfo");
+	 outputs.push_back("coincidences");
+	 break;
+      case 'n':
+	 newDatabase = true;
+	 break;
+      case '?':
+	 DatabaseOutput helpNeeded;
+	 helpNeeded.OutputHelpInfo();
+	 break;
+      }
+   
+   string databaseName = argv[optind];
+   for(int i = optind+1; i < argc; i++)
+      gammas.push_back(argv[i]);
+
+   if(outputs.empty() && gammas.size() == 1)
+      outputs.push_back("generalInfo");
+   else if (outputs.empty() && gammas.size() == 2)
+      outputs.push_back("range");
 
    //Open the connection to the database
-   DatabaseInterface openInterface(argc);
-   string databaseName = argv[1];
-   if(databaseName == "-n") {
-      openInterface.CreateDatabase(argv[2]);
-      
+   DatabaseInterface interface;
+
+   if(newDatabase) {
+      interface.OpenDatabase(databaseName);
+      DatabaseInput createDatabase(databaseName);
+      interface.CloseDatabase();
       exit(1);
    }else {
-      openInterface.OpenDatabase(databaseName);
+      interface.OpenDatabase(databaseName);
    }
    
    //Check the existence and modification time of the data files.
    //Fill the database if necessary.
    DatabaseInput fillDatabase;
-   //Start the output interface.
-   DatabaseOutput outputHandling;
-   
-   switch(argc) {
-   case 3:
-      if (atoi(argv[2]) != 0) {
-   	 gammas.push_back(argv[2]);
-   	 outputHandling.VerbosityHandler(gammas, "-g");
-   	 exit(1);
-      }else
-   	 openInterface.OutputHelpInfo();
-      break;
-   case 4: 
-      if(atoi(argv[2]) != 0 &&  atoi(argv[3]) != 0) {
-   	 gammas.push_back(argv[2]);
-   	 gammas.push_back(argv[3]);
-   	 outputHandling.VerbosityHandler(gammas, "-r");
-   	 exit(1);
-      }else if (atoi(argv[2]) == 0 &&  atoi(argv[3]) != 0) {
-   	 gammas.push_back(argv[3]);
-   	 outputHandling.VerbosityHandler(gammas, argv[2]);
-      }else 
-   	 openInterface.OutputHelpInfo();
-      break;
-   case 5:
-      if(atoi(argv[2]) == 0 && atoi(argv[3]) != 0 
-   	 && atoi(argv[4]) != 0) {
-   	 gammas.push_back(argv[3]);
-   	 gammas.push_back(argv[4]);
-   	 outputHandling.VerbosityHandler(gammas, "-g");
-      }else
-   	 openInterface.OutputHelpInfo();
-      break;
-   default:
-      openInterface.OutputHelpInfo();
-   }//switch(argc)
+   DatabaseOutput output;
+   output.ParseData(outputs, gammas);
+   interface.CloseDatabase();
 }

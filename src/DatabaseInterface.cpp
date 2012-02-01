@@ -4,7 +4,6 @@
  ** Written: S.V. Paulauskas - 30 Aug 2011
  ************************************************/
 #include <iostream>
-#include <vector>
 
 #include <cstdlib>
 
@@ -15,131 +14,76 @@ using std::endl;
 using std::string;
 using std::vector;
 
-sqlite3 *DatabaseInterface::database;
-string DatabaseInterface::databaseName;
-string DatabaseInterface::filePath;
+string DatabaseInterface::filePath_;
+string DatabaseInterface::databaseName_;
+sqlite3 *DatabaseInterface::database_;
 
-//********** CreateDatabase **********
-void DatabaseInterface::CreateDatabase(const string &name)
+//********** ExecuteCommands **********
+void DatabaseInterface::ExecuteCommand(const vector<string> &command)
 {
-   int returnCode = sqlite3_open(name.c_str(), &database);
-
-   if(returnCode) {
-      cout << "Cannot open database named " << databaseName << endl
-	   << "Sqlite3 error message: " << sqlite3_errmsg(database) << endl;
-      sqlite3_close(database);
-      exit(1);
-   }else {
-      vector<string> commandList;
-      commandList.push_back("create table coinInfo(Gamma integer primary key "
-			    "asc not null, Spectrum integer, GammaLow integer, "
-			    "GammaHigh integer, BkgLowA integer, "
-			    "BkgHighA integer,BkgLowB integer, "
-			    "BkgHighB integer, Comments varchar)");
-      commandList.push_back("CREATE TABLE coinFitInfo(Gamma integer asc "
-			    "not null, CoinGamma integer not null, "
-			    "Spectrum integer, FitLow integer, "
-			    "FitHigh integer, Centroid real, Area integer, "
-			    "PercentErr real, FWHM real, LowHighMethod integer, "
-			    "Comments varchar, primary key (Gamma, CoinGamma))");
-      commandList.push_back("create table coincidences(Gamma integer asc "
-			    "not null, CoinGamma integer not null, "
-			    "primary key (Gamma, CoinGamma))");
-      commandList.push_back("CREATE TABLE generalInfo(Gamma integer "
-			    "primary key asc not null, Spectrum integer, "
-			    "Nucleus varchar, HalfLife real, PercentErr real,"
-			    "Comments varchar)");
-      commandList.push_back("CREATE TABLE fitInfo(Gamma integer "
-			    "asc not null, Spectrum integer, FitLow integer, "
-			    "FitHigh integer, Centroid real, Area integer, "
-			    "PercentErr real, FWHM real, LowHighMethod integer, "
-			    "Comments varchar, primary key (Gamma, Spectrum))");
-      commandList.push_back("CREATE TABLE modTimes(FileName varchar primary key "
-			    "asc not null, ModTime date not null)");
-      commandList.push_back("insert into modTimes values('generalInfo', 0)");
-      commandList.push_back("insert into modTimes values('coinInfo', 0)");
-      commandList.push_back("insert into modTimes values('fitInfo',0)");
-      commandList.push_back("insert into modTimes values('coinFitInfo',0)");
-
-      char *errorMessage = 0;
-      for(vector<string>::iterator it = commandList.begin(); 
-	  it != commandList.end(); it++){
-	 int rc = sqlite3_exec(database, (*it).c_str(), NULL, 0, &errorMessage);
-	 if(rc != SQLITE_OK){
-	    cout << "Error creating the tables in the new database." << endl
-		 << "ERROR:" << errorMessage << endl;
-	    sqlite3_free(errorMessage);
-	    exit(1);
-	 }
-      }
-      cout << "Successfully created database " << name << endl;
-   }// if(returnCode)
-}
-
-
-//********** DatabaseInterface **********
-DatabaseInterface::DatabaseInterface()
-{
-}
-
-
-//********** DatabaseInterface **********
-DatabaseInterface::DatabaseInterface(const int &noArgs)
-{
-   if(noArgs < 3) {
-      OutputHelpInfo();
-      exit(1);
+   char *errorMessage = 0;
+   for(unsigned int i = 0; i < command.size(); i++) {
+      int rc = sqlite3_exec(database_, command[i].c_str(), NULL, 
+    			    NULL, &errorMessage);
+      if(rc != SQLITE_OK) {
+    	 cout << "Error executing a sqlite command."
+    	      << endl << "ERROR: " << errorMessage << endl;
+    	 sqlite3_free(errorMessage);
+    	 exit(1);
+      } 
    }
 }
 
-
-//********** ~DatabaseInterface() **********
-DatabaseInterface::~DatabaseInterface()
+//********** SetFilePath **********
+void DatabaseInterface::SetFilePath(void)
 {
-   sqlite3_close(database);
-}
-
-
-//********** ExtractFilePath **********
-void DatabaseInterface::ExtractFilePath(void)
-{
-   size_t found = databaseName.find_last_of("/\\");
-   filePath = databaseName.substr(0,found);
+   size_t found = databaseName_.find_last_of("/\\");
+   filePath_ = databaseName_.substr(0,found);
 }
 
 
 //********** OpenDatabase **********
-void DatabaseInterface::OpenDatabase(const string &dbName)
+void DatabaseInterface::OpenDatabase(const string &name)
 {
-   databaseName = dbName;
-   ExtractFilePath();
-   int returnCode = sqlite3_open_v2(databaseName.c_str(), &database, 
-				    SQLITE_OPEN_READWRITE,"unix");
+   databaseName_ = name;
+   SetFilePath();
+   int returnCode = sqlite3_open_v2(databaseName_.c_str(), &database_, 
+				    SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 
+				    "unix");
    if(returnCode) {
-      cout << "Cannot open database named " << databaseName << endl
-	   << "Sqlite3 error message: " << sqlite3_errmsg(database) << endl;
-      sqlite3_close(database);
+      cout << "Cannot open database named " << databaseName_ << endl
+	   << "Sqlite3 error message: " << sqlite3_errmsg(database_) << endl;
+      sqlite3_close(database_);
       exit(1);
-   }else {
-      cout << "Successfully opened database: " << databaseName << endl;
-   }
+   }else
+      cout << "Successfully opened database: " << databaseName_ << endl;
 }
 
 
-//********** OutputHelpInfo **********
-void DatabaseInterface::OutputHelpInfo(void)
+//********** QueryDatabase **********
+void DatabaseInterface::QueryDatabase(const vector<string> &command)
 {
-   cout << endl << "A program to help organize gammas." << endl
-	<< "Example: ./gammaSearch <database name> <flag> <gammaEnergy>" << endl
-	<< "Recognized flags (place before the energy): " << endl
-	<< "-h -> displays this message" << endl
-	<< "-g -> outputs general information (default)" << endl
-	<< "-c -> outputs general + coincidence information" << endl
-	<< "-f -> outputs general + fit information" << endl
-	<< "-v -> outputs all information" << endl 
-	<< "To search in an energy range simply enter the " 
-	<< "low (>0) and high bound." << endl
-	<< "General output for a range can be generated by passing" 
-	<< " the \"-g\" flag." << endl
-	<< "Problems? Contact stanpaulauskas@gmail.com" << endl << endl;
+   requestedData_.clear();
+   sqlite3_stmt *statement; 
+   for(unsigned int i = 0; i < command.size(); i++) {
+      bool prepared = 
+	 sqlite3_prepare_v2(database_, command.at(i).c_str(), 
+			    -1, &statement, 0) == SQLITE_OK;
+      if(prepared) {
+	 int noColumns = sqlite3_column_count(statement);
+	 while (true) {
+	    int result = sqlite3_step(statement);
+	    if(result == SQLITE_ROW) {
+	       for(int col = 0; col < noColumns; col++) { 
+		  string name = (char*)sqlite3_column_name(statement, col);
+		  string value = (char*)sqlite3_column_text(statement, col);
+		  requestedData_.push_back(make_pair(name, value));
+	       }
+	    }else {
+	       break;
+	    }
+	 }//while(true)
+	 sqlite3_finalize(statement);
+      }//if(prepared)
+   }
 }

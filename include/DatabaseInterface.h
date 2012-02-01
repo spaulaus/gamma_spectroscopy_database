@@ -13,18 +13,25 @@
 class DatabaseInterface
 {
  public:
-   DatabaseInterface();
-   DatabaseInterface(const int &noArgs);
-   ~DatabaseInterface();
+   DatabaseInterface(){};
+   ~DatabaseInterface(){};
 
-   void CreateDatabase(const std::string &name);
-   void OpenDatabase(const std::string &dbName);
-   void OutputHelpInfo(void);
-   void ExtractFilePath(void);
+   void CloseDatabase(){sqlite3_close(database_);};
+   void OpenDatabase(const std::string &name);
+   void SetFilePath(void);
+   void ExecuteCommand(const std::vector<std::string> &command);
+   void QueryDatabase(const std::vector<std::string> &command);
    
- protected:
-   static sqlite3 *database;
-   static std::string databaseName;
-   static std::string filePath;
+   std::string GetFilePath(void) {return filePath_;};
+   std::string GetDatabaseName(void) {return databaseName_;};
+   std::vector<std::pair<std::string, std::string> >* GetRequestedData(void)
+      {return &requestedData_;};
+
+ private:
+   static std::string filePath_;
+   static std::string databaseName_;
+   static sqlite3 *database_;
+
+   std::vector<std::pair<std::string, std::string> > requestedData_;
 }; //class DatabaseInterface
 #endif //__DATABASEINTERFACE_H_
