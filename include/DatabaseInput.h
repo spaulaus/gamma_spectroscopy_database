@@ -15,8 +15,10 @@ class DatabaseInput
 {
  public:
    DatabaseInput();
-   DatabaseInput(const std::string &flag) {CreateDatabase();};
    ~DatabaseInput(){};
+
+   void SetDatabaseName(const std::string &name) {databaseName_ = name;};
+   void FillDatabase(void);
 
  private:
    DatabaseInterface interface;
@@ -25,7 +27,6 @@ class DatabaseInput
 
    void CommandSizeCheck(void);
    void CompareModTimes(void);
-   void CreateDatabase(void); 
    void ReadDataFiles(void);
    void StatDataFiles(void);
    void UpdateModTimes(const std::time_t &modTime);
@@ -34,6 +35,7 @@ class DatabaseInput
    std::map<std::string, std::time_t> newTimes_;
    std::string tableName_;
    std::string filePath_;
+   std::string databaseName_;
    std::vector<std::string> values_;
    std::vector<std::string> coinGammas_;
 }; //class DatabaseInterface

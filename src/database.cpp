@@ -47,8 +47,15 @@ int main(int argc, char* argv[])
 	 outputs.push_back("coinInfo");
 	 outputs.push_back("coincidences");
 	 break;
-      case 'n':
-	 newDatabase = true;
+      case 'n': {
+	 string databaseName = optarg;
+	 DatabaseInterface interface;
+	 interface.OpenDatabase(databaseName);
+	 DatabaseInput createDatabase;
+	 createDatabase.SetDatabaseName(databaseName);
+	 createDatabase.FillDatabase();
+	 interface.CloseDatabase();
+	 exit(1); }
 	 break;
       case '?':
 	 DatabaseOutput helpNeeded;
@@ -67,16 +74,8 @@ int main(int argc, char* argv[])
 
    //Open the connection to the database
    DatabaseInterface interface;
-
-   if(newDatabase) {
-      interface.OpenDatabase(databaseName);
-      DatabaseInput createDatabase(databaseName);
-      interface.CloseDatabase();
-      exit(1);
-   }else {
-      interface.OpenDatabase(databaseName);
-   }
-   
+   interface.OpenDatabase(databaseName);
+      
    //Check the existence and modification time of the data files.
    //Fill the database if necessary.
    DatabaseInput fillDatabase;

@@ -49,8 +49,8 @@ vector<string> DatabaseInput::BuildCommand(void)
 }//string DatabaseInput::BuildCommand
 
 
-//********** CreateDatabase **********
-void DatabaseInput::CreateDatabase(void)
+//********** FillDatabase **********
+void DatabaseInput::FillDatabase(void)
 {
    vector<string> commandList;
    commandList.push_back("create table coinInfo(Gamma integer primary key "
@@ -59,11 +59,11 @@ void DatabaseInput::CreateDatabase(void)
 			 "BkgHighA integer,BkgLowB integer, "
 			 "BkgHighB integer, Comments varchar)");
    commandList.push_back("CREATE TABLE coinFitInfo(Gamma integer asc "
-			 "not null, CoinGamma integer not null, "
-			 "Spectrum integer, FitLow integer, "
-			 "FitHigh integer, Centroid real, Area integer, "
-			 "PercentErr real, FWHM real, LowHighMethod integer, "
-			 "Comments varchar, primary key (Gamma, CoinGamma))");
+    			 "not null, CoinGamma integer not null, "
+    			 "Spectrum integer, FitLow integer, "
+    			 "FitHigh integer, Centroid real, Area integer, "
+    			 "PercentErr real, FWHM real, LowHighMethod integer, "
+    			 "Comments varchar, primary key (Gamma, CoinGamma))");
    commandList.push_back("create table coincidences(Gamma integer asc "
 			 "not null, CoinGamma integer not null, "
 			 "primary key (Gamma, CoinGamma))");
@@ -86,10 +86,9 @@ void DatabaseInput::CreateDatabase(void)
    commandList.push_back("insert into modTimes values('coinFitInfo',0)");
    commandList.push_back("insert into modTimes values('eff',0)");
    
-   string databaseName = interface.GetDatabaseName();
-   cout << "Begin creating database: " << databaseName << endl;
+   cout << "Begin creating database: " << databaseName_ << endl;
    interface.ExecuteCommand(commandList);
-   cout << "Successfully created database: " << databaseName << endl;
+   cout << "Successfully created database: " << databaseName_ << endl;
 }//void DatabaseInterface::CreateDatabase
 
 
@@ -148,7 +147,7 @@ vector<string> DatabaseInput::GetComment(string &line)
 void DatabaseInput::StatDataFiles(void)
 {
    const char* arr[] = 
-      {"coinInfo", "generalInfo","fitInfo", "coinInfo", "eff"};
+      {"coinInfo", "generalInfo","fitInfo", "eff"};
    vector<string> fileNames (arr, arr +sizeof(arr) / sizeof(arr[0]));
    for(unsigned int i = 0; i < fileNames.size(); i++) {
       struct stat fileAttributes;

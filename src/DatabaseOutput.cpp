@@ -66,7 +66,7 @@ bool CoinCompairson(const pair<string, string> &alpha,
 
 
 //********** EfficiencyCalc **********
-double DatabaseOutput::EfficiencyCalc(const double &area)
+double DatabaseOutput::EfficiencyCalc(const double &energy)
 {
    double a = atof(efficiency_.at(1).second.c_str());
    double b = atof(efficiency_.at(4).second.c_str());
@@ -78,8 +78,8 @@ double DatabaseOutput::EfficiencyCalc(const double &area)
    double E1 = 50.;
    double E2 = 1000.;
    
-   double eff = exp(pow(pow((a+b*log10(area/E1)+c*pow(log10(area/E1),2)),-g) + 
-    			pow(d+e*log10(area/E2)+f*pow(log10(area/E2),2), -g), -1/g));
+   double eff = exp(pow(pow((a+b*log10(energy/E1)+c*pow(log10(energy/E1),2)),-g) + 
+    			pow(d+e*log10(energy/E2)+f*pow(log10(energy/E2),2), -g), -1/g));
    return(eff);
 }
 
@@ -135,7 +135,7 @@ void DatabaseOutput::OutputData(void)
 	    efficiency = EfficiencyCalc(gammaEnergy) / 100;
 	    temp = atof(value.c_str()) * efficiency;
 	    it++;
-	    cout << label << " = " << temp << " +- " 
+	    cout << "Intensity = " << temp << " +- " 
 		 << temp * (atof((*it).second.c_str())/100) << endl;
 	 } else if(label == "HalfLife") {
 	    it++;
