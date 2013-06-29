@@ -22,7 +22,6 @@ int main(int argc, char* argv[])
 {
    vector<string> gammas, outputs;
    int opt;
-   bool newDatabase = false;
    
    if(argc < 3) {
       DatabaseOutput helpNeeded;
@@ -30,8 +29,15 @@ int main(int argc, char* argv[])
       exit(1);
    }
       
-   while((opt = getopt (argc, argv, "cfvn:")) != -1)
+   while((opt = getopt (argc, argv, "hgcfvn:")) != -1)
       switch(opt) {
+      case 'h': {
+          DatabaseOutput helpNeeded;
+          helpNeeded.OutputHelpInfo();
+          break; }
+      case 'g':
+          outputs.push_back("generalInfo");
+          break;
       case 'c': 
 	 outputs.push_back("generalInfo");
 	 outputs.push_back("coinInfo");
