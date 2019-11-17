@@ -5,9 +5,9 @@
 #ifndef __DATABASEOUTPUT_H_
 #define __DATABASEOUTPUT_H_ 1
 
-#include "DatabaseInterface.h"
+#include "DatabaseInterface.hpp"
 
-//Define the compairson Function for sort
+//Define the comparison Function for sort
 bool CoinComparison(const std::string &alpha, const std::string &beta);
 
 class DatabaseOutput : public DatabaseInterface
@@ -19,7 +19,6 @@ class DatabaseOutput : public DatabaseInterface
    void ParseData(const std::vector<std::string> &tables,
 		  const std::vector<std::string> &gammas);
    void OutputHelpInfo(void);
-
  private:
    DatabaseInterface interface;
    double EfficiencyCalc(const double &area);

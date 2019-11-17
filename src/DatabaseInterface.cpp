@@ -7,12 +7,9 @@
 
 #include <cstdlib>
 
-#include "DatabaseInterface.h"
+#include "DatabaseInterface.hpp"
 
-using std::cout;
-using std::endl;
-using std::string;
-using std::vector;
+using namespace std;
 
 string DatabaseInterface::filePath_;
 string DatabaseInterface::databaseName_;
@@ -23,14 +20,14 @@ void DatabaseInterface::ExecuteCommand(const vector<string> &command)
 {
    char *errorMessage = 0;
    for(unsigned int i = 0; i < command.size(); i++) {
-      int rc = sqlite3_exec(database_, command[i].c_str(), NULL, 
+      int rc = sqlite3_exec(database_, command[i].c_str(), NULL,
     			    NULL, &errorMessage);
       if(rc != SQLITE_OK) {
     	 cout << "Error executing a sqlite command."
     	      << endl << "ERROR: " << errorMessage << endl;
     	 sqlite3_free(errorMessage);
     	 exit(1);
-      } 
+      }
    }
 }
 
@@ -47,8 +44,8 @@ void DatabaseInterface::OpenDatabase(const string &name)
 {
    databaseName_ = name;
    SetFilePath();
-   int returnCode = sqlite3_open_v2(databaseName_.c_str(), &database_, 
-				    SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 
+   int returnCode = sqlite3_open_v2(databaseName_.c_str(), &database_,
+				    SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE,
 				    "unix");
    if(returnCode) {
       cout << "Cannot open database named " << databaseName_ << endl
@@ -64,17 +61,17 @@ void DatabaseInterface::OpenDatabase(const string &name)
 void DatabaseInterface::QueryDatabase(const vector<string> &command)
 {
    requestedData_.clear();
-   sqlite3_stmt *statement; 
+   sqlite3_stmt *statement;
    for(unsigned int i = 0; i < command.size(); i++) {
-      bool prepared = 
-	 sqlite3_prepare_v2(database_, command.at(i).c_str(), 
+      bool prepared =
+	 sqlite3_prepare_v2(database_, command.at(i).c_str(),
 			    -1, &statement, 0) == SQLITE_OK;
       if(prepared) {
 	 int noColumns = sqlite3_column_count(statement);
 	 while (true) {
 	    int result = sqlite3_step(statement);
 	    if(result == SQLITE_ROW) {
-	       for(int col = 0; col < noColumns; col++) { 
+	       for(int col = 0; col < noColumns; col++) {
 		  string name = (char*)sqlite3_column_name(statement, col);
 		  string value = (char*)sqlite3_column_text(statement, col);
 		  requestedData_.push_back(make_pair(name, value));

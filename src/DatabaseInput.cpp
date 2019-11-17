@@ -10,11 +10,11 @@
 #include <sstream>
 
 #include <cstdlib>
+#include <sqlite3.h>
+#include <sys/stat.h>
 
-#include "DatabaseInterface.h"
-#include "DatabaseInput.h"
-#include "sqlite3.h"
-#include "sys/stat.h"
+#include "DatabaseInterface.hpp"
+#include "DatabaseInput.hpp"
 
 using namespace std;
 
@@ -24,10 +24,10 @@ vector<string> DatabaseInput::BuildCommand(void)
    vector<string> tempCommands;
    stringstream command;
    command << "insert or replace into " << tableName_ << " values(";
-   for(vector<string>::iterator it = values_.begin(); 
-       it != values_.end(); it++) { 
+   for(vector<string>::iterator it = values_.begin();
+       it != values_.end(); it++) {
       unsigned int position = it - values_.begin();
-      
+
       if(position == values_.size()-1)
 	 command << "'" << *it << "')";
       else
@@ -37,10 +37,10 @@ vector<string> DatabaseInput::BuildCommand(void)
    tempCommands.push_back(command.str());
 
    if(coinGammas_.size() != 0 && tableName_ == "coinInfo") {
-      for(vector<string>::iterator it = coinGammas_.begin(); 
+      for(vector<string>::iterator it = coinGammas_.begin();
 	  it != coinGammas_.end(); it++) {
-	 stringstream coins; 
-	 coins << "insert or replace into coincidences values(" 
+	 stringstream coins;
+	 coins << "insert or replace into coincidences values("
 	       << values_.at(0) << ",'" << *it << "')";
 	 tempCommands.push_back(coins.str());
       }
@@ -85,7 +85,7 @@ void DatabaseInput::FillDatabase(void)
    commandList.push_back("insert into modTimes values('fitInfo',0)");
    commandList.push_back("insert into modTimes values('coinFitInfo',0)");
    commandList.push_back("insert into modTimes values('eff',0)");
-   
+
    cout << "Begin creating database: " << databaseName_ << endl;
    interface.ExecuteCommand(commandList);
    cout << "Successfully created database: " << databaseName_ << endl;
@@ -106,17 +106,16 @@ void DatabaseInput::CommandSizeCheck(void)
       wrongSize = true;
    else if(tableName_ == "eff" && values_.size() != 3)
       wrongSize = true;
-         
+
    if(wrongSize) {
-      cout << endl << "There is a(are) missing value(s) in " << tableName_ 
-	   << " on line number " << lineNo_ << ".  Maybe " 
-	   << "you've added an extra '\"'." << endl 
-	   << "Please correct this." << endl 
+      cout << endl << "There is a(are) missing value(s) in " << tableName_
+	   << " on line number " << lineNo_ << ".  Maybe "
+	   << "you've added an extra '\"'." << endl
+	   << "Please correct this." << endl
 	   << endl;
       exit(1);
    }
 }
-
 
 //********** GetComment **********
 vector<string> DatabaseInput::GetComment(string &line)
@@ -125,17 +124,17 @@ vector<string> DatabaseInput::GetComment(string &line)
    size_t foundStart = line.find("\"");
    size_t foundEnd   = line.find("\"", int(foundStart)+1);
    int size = foundEnd - foundStart;
-   
+
    if(foundStart == string::npos || foundEnd == string::npos) {
-      cout << endl << "Missing quotes in \"" << tableName_ 
+      cout << endl << "Missing quotes in \"" << tableName_
 	   << "\".  At line: " << lineNo_ << "." << endl
 	   << "This is a fatal error." << endl << endl;
       exit(1);
    }
-       
+
    string comment = line.substr(int(foundStart) + 1, size - 1);
    line.erase(foundStart, size + 1);
-   
+
    temp.push_back(line);
    temp.push_back(comment);
 
@@ -146,7 +145,7 @@ vector<string> DatabaseInput::GetComment(string &line)
 //********** GetNewModTime **********
 void DatabaseInput::StatDataFiles(void)
 {
-   const char* arr[] = 
+   const char* arr[] =
       {"coinInfo", "generalInfo","fitInfo", "eff"};
    vector<string> fileNames (arr, arr +sizeof(arr) / sizeof(arr[0]));
    for(unsigned int i = 0; i < fileNames.size(); i++) {
@@ -154,7 +153,7 @@ void DatabaseInput::StatDataFiles(void)
       stringstream tempFileName;
       tempFileName << filePath_ << "/" << fileNames[i] << ".dat";
       int statResult = stat(tempFileName.str().c_str(), &fileAttributes);
-      
+
       if(statResult == -1) {
 	 cout << endl << "Problem with the data file \"" << fileNames[i]
 	      << "\".  It does not seem to exist." << endl << endl;
@@ -174,7 +173,7 @@ void DatabaseInput::CompareModTimes(void)
    vector<pair<string,string> > *oldTimes = interface.GetRequestedData();
 
    for(unsigned int i = 0; i < oldTimes->size(); i+=2) {
-      map<string,time_t>::iterator itNew = 
+      map<string,time_t>::iterator itNew =
 	 newTimes_.find(oldTimes->at(i).second);
       tableName_ = oldTimes->at(i).second;
       if(atoi(oldTimes->at(i+1).second.c_str()) < (*itNew).second) {
@@ -183,7 +182,7 @@ void DatabaseInput::CompareModTimes(void)
       }else {
        	 continue;
       }
-   }	    
+   }
 }
 
 
@@ -191,7 +190,7 @@ void DatabaseInput::CompareModTimes(void)
 DatabaseInput::DatabaseInput()
 {
    filePath_ = interface.GetFilePath();
-   
+
    StatDataFiles();
    vector<string> temp0 (1,"begin");
    interface.ExecuteCommand(temp0);
@@ -215,12 +214,12 @@ void DatabaseInput::ReadDataFiles(void)
 	 lineNo_++;
 
 	 string line, temp;
-	 	 
-	 //Skip over the comment lines here. 
+
+	 //Skip over the comment lines here.
 	 getline(inputFile, line);
 	 if(line.find("#") != string::npos || line == "")
 	    continue;
-	 
+
 	 //Get the Coincidence gammas
 	 if(tableName_ == "coinInfo") {
 	    vector<string> tempCoin = GetComment(line);
@@ -230,8 +229,8 @@ void DatabaseInput::ReadDataFiles(void)
 	    tempStream << tempCoin.at(1);
 	    while(tempStream >> temp)
 	       coinGammas_.push_back(temp);
-	 }	 
-	
+	 }
+
 	 string comment = "";
 	 if(tableName_ != "eff") {
 	    vector<string> tempComment = GetComment(line);
@@ -247,9 +246,9 @@ void DatabaseInput::ReadDataFiles(void)
 	 if(tableName_ != "eff")
 	    tempData.push_back(comment);
 	 values_ = tempData;
-	 
+
 	 //Do operations to update/fill the database with the
-	 //collected values.  
+	 //collected values.
 	 CommandSizeCheck();
 	 vector<string> commands = BuildCommand();
 	 interface.ExecuteCommand(commands);

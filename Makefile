@@ -3,29 +3,25 @@ SHELL=/bin/bash
 
 #Define the virtual paths
 vpath %.cpp src/
-vpath %.hpp include/
+vpath %.hpp inc/
 vpath %.o obj/
-
-#Set some paths to install the shared objects to
-SO_INSTALL_PATH = /home/vincent/programs/libFiles
-HEADER_INSTALL_PATH = /home/vincent/programs/headerFiles
 
 #Set some of the compile options
 CXX = g++
-CXXFLAGS = -g -Wall -Dsqlite_enable_rtree=1 $(CINCLUDEDIRS)
+CXXFLAGS = -fPIC -g -std=c++11 -Wall $(CINCLUDEDIRS) -Dsqlite_enable_rtree=1
 LDLIBS = -ldl -lpthread -lsqlite3
-CINCLUDEDIRS = -Iinclude
+CINCLUDEDIRS = -Iinc
 c++SrcSuf = cpp
 
 #Set the name of the program to be compiled
-PROGRAM = database
+PROGRAM = gammaDatabase
 VERSION = $(shell git describe --abbrev=0 --tags)
 
 #Define Objects
 DATABASEINPUTO = DatabaseInput.o
 DATABASEINTERFACEO = DatabaseInterface.o
 DATABASEOUTPUTO = DatabaseOutput.o
-MAINO = database.o
+MAINO = main.o
 
 #Make the object list and prefix the object directory
 OBJS = $(MAINO) $(DATABASEINTERFACEO) $(DATABASEINPUTO) $(DATABASEOUTPUTO)
@@ -47,7 +43,7 @@ $(PROGRAM): $(OBJS_W_DIR)
 $(OBJDIR)/%.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-.PHONY: clean so
-clean: 
+.PHONY: clean
+clean:
 	@echo "Cleaning..."
-	@rm -f $(OBJDIR)/* $(PROGRAM) *~ src/*~ include/*~
+	@rm -f $(OBJDIR)/*.o $(PROGRAM) *~ src/*~ inc/*~ data/*~

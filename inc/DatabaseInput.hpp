@@ -9,7 +9,7 @@
 
 #include <ctime>
 
-#include "DatabaseInterface.h"
+#include "DatabaseInterface.hpp"
 
 class DatabaseInput
 {
